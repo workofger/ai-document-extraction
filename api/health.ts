@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { cors } from './_lib/cors';
+import { cors } from './lib/cors.js';
 
 /**
  * GET /api/health

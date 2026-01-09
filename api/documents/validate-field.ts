@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { cors } from '../_lib/cors';
-import { validateApiKey } from '../_lib/auth';
-import { validateField, VALIDATABLE_FIELDS } from '../_lib/documentService';
+import { cors } from '../lib/cors.js';
+import { validateApiKey } from '../lib/auth.js';
+import { validateField, VALIDATABLE_FIELDS } from '../lib/documentService.js';
 
 /**
  * POST /api/documents/validate-field
