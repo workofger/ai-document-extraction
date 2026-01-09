@@ -481,96 +481,131 @@
     .code-bool { color: #c9b1ff; }
 
     /* CTA Section */
-    .cta-section {
-      padding: 6rem 0 8rem;
+    /* API Documentation Section */
+    .docs-detail-section {
+      padding: 5rem 0 8rem;
     }
 
-    .cta-card {
-      background: linear-gradient(180deg, var(--black-card) 0%, var(--black-soft) 100%);
-      border: 1px solid var(--yellow-dim);
-      border-radius: 28px;
-      padding: 5rem 4rem;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
+    .api-block {
+      background: var(--black-card);
+      border: 1px solid var(--white-10);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
     }
 
-    .cta-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: var(--gradient-yellow);
-    }
-
-    .cta-card::after {
-      content: '';
-      position: absolute;
-      top: -100px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 400px;
-      height: 200px;
-      background: radial-gradient(ellipse, rgba(255,214,10,0.15), transparent 70%);
-      pointer-events: none;
-    }
-
-    .cta-card h2 {
-      font-size: 2.25rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      position: relative;
-    }
-
-    .cta-card > p {
-      color: var(--white-50);
-      margin-bottom: 2.5rem;
-      max-width: 500px;
-      margin-left: auto;
-      margin-right: auto;
-      font-size: 1.1rem;
-      line-height: 1.7;
-      position: relative;
-    }
-
-    .google-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.875rem;
-      background: var(--white);
-      color: var(--black);
-      border: none;
-      padding: 1.125rem 2.5rem;
-      border-radius: 14px;
-      font-size: 1rem;
+    .api-block h3 {
+      font-size: 1.25rem;
       font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-    }
-
-    .google-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 40px rgba(255,255,255,0.2);
-    }
-
-    .google-btn svg {
-      width: 22px;
-      height: 22px;
-    }
-
-    .access-note {
-      margin-top: 1.5rem;
-      font-size: 0.9rem;
-      color: var(--white-50);
-      position: relative;
-    }
-
-    .access-note strong {
+      margin-bottom: 0.75rem;
       color: var(--yellow);
+    }
+
+    .api-block > p {
+      color: var(--white-70);
+      margin-bottom: 1.5rem;
+    }
+
+    .api-block h4 {
+      font-size: 0.9rem;
       font-weight: 600;
+      color: var(--white-70);
+      margin: 1.5rem 0 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .api-block code {
+      background: var(--black-elevated);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+    }
+
+    .api-block .code-container {
+      margin-bottom: 1rem;
+    }
+
+    .endpoints-table {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .endpoint-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--black-elevated);
+      border-radius: 10px;
+    }
+
+    .endpoint-row code {
+      background: transparent;
+      color: var(--white);
+      font-weight: 500;
+    }
+
+    .endpoint-row span:last-child {
+      color: var(--white-50);
+      font-size: 0.9rem;
+    }
+
+    .method {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      min-width: 45px;
+      text-align: center;
+    }
+
+    .method.get {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+    }
+
+    .method.post {
+      background: rgba(255, 214, 10, 0.2);
+      color: var(--yellow);
+    }
+
+    .fields-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+
+    .field-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 1rem;
+      background: var(--black-elevated);
+      border-radius: 10px;
+    }
+
+    .field-item code {
+      color: var(--yellow);
+      background: transparent;
+      font-weight: 600;
+    }
+
+    .field-item span {
+      color: var(--white-50);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 600px) {
+      .fields-grid {
+        grid-template-columns: 1fr;
+      }
+      .endpoint-row {
+        flex-wrap: wrap;
+      }
     }
 
     /* Footer */
@@ -872,21 +907,170 @@
       </div>
     </section>
 
-    <!-- CTA Section -->
-    <section id="access" class="cta-section">
-      <div class="cta-card">
-        <h2>Access Full Documentation</h2>
-        <p>
-          Get complete API docs, code examples, and integration guides. 
-          Sign in with your PartRunner account to continue.
-        </p>
-        <button class="google-btn" onclick="signInWithGoogle()">
-          <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          Sign in with Google
-        </button>
-        <p class="access-note">
-          🔒 Restricted to <strong>@partrunner.com</strong> accounts only
-        </p>
+    <!-- API Documentation Section -->
+    <section id="access" class="docs-detail-section">
+      <div class="section-header">
+        <h2>API Reference</h2>
+        <p>Complete endpoint documentation</p>
+      </div>
+
+      <!-- Authentication -->
+      <div class="api-block">
+        <h3>🔐 Authentication</h3>
+        <p>All endpoints (except <code>/api/health</code>) require the <code>X-API-Key</code> header.</p>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+            <span class="code-title">Header</span>
+          </div>
+          <pre><code><span class="code-key">X-API-Key</span>: your-api-key</code></pre>
+        </div>
+      </div>
+
+      <!-- Analyze Endpoint -->
+      <div class="api-block">
+        <h3>📄 POST /api/documents/analyze</h3>
+        <p>Analyze document images via URL, base64, or file upload.</p>
+        
+        <h4>Option 1: URL (Recommended)</h4>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+            <span class="code-title">curl</span>
+          </div>
+          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="code-str">"Content-Type: application/json"</span> \
+  -H <span class="code-str">"X-API-Key: your-api-key"</span> \
+  -d <span class="code-str">'{"url": "https://example.com/ine.jpg"}'</span></code></pre>
+        </div>
+
+        <h4>Option 2: File Upload</h4>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+            <span class="code-title">curl</span>
+          </div>
+          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="code-str">"X-API-Key: your-api-key"</span> \
+  -F <span class="code-str">"file=@document.jpg"</span></code></pre>
+        </div>
+
+        <h4>Option 3: Base64</h4>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+            <span class="code-title">curl</span>
+          </div>
+          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="code-str">"Content-Type: application/json"</span> \
+  -H <span class="code-str">"X-API-Key: your-api-key"</span> \
+  -d <span class="code-str">'{"base64": "data:image/jpeg;base64,/9j/4AAQ..."}'</span></code></pre>
+        </div>
+      </div>
+
+      <!-- Validate Field Endpoint -->
+      <div class="api-block">
+        <h3>✅ POST /api/documents/validate-field</h3>
+        <p>Validate and auto-correct CURP, RFC, CLABE, VIN, or Placas.</p>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+            <span class="code-title">curl</span>
+          </div>
+          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/validate-field \
+  -H <span class="code-str">"Content-Type: application/json"</span> \
+  -H <span class="code-str">"X-API-Key: your-api-key"</span> \
+  -d <span class="code-str">'{"field": "curp", "value": "PEGJ85O1O1HDFRRL09"}'</span></code></pre>
+        </div>
+        <div class="code-container">
+          <div class="code-header">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+            <span class="code-title">response.json</span>
+          </div>
+          <pre><code>{
+  <span class="code-key">"success"</span>: <span class="code-bool">true</span>,
+  <span class="code-key">"data"</span>: {
+    <span class="code-key">"field"</span>: <span class="code-str">"curp"</span>,
+    <span class="code-key">"originalValue"</span>: <span class="code-str">"PEGJ85O1O1HDFRRL09"</span>,
+    <span class="code-key">"valid"</span>: <span class="code-bool">true</span>,
+    <span class="code-key">"corrected"</span>: <span class="code-str">"PEGJ850101HDFRRL09"</span>,
+    <span class="code-key">"corrections"</span>: [<span class="code-str">"Position 4: O → 0"</span>, <span class="code-str">"Position 6: O → 0"</span>]
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <!-- Other Endpoints -->
+      <div class="api-block">
+        <h3>📋 Other Endpoints</h3>
+        <div class="endpoints-table">
+          <div class="endpoint-row">
+            <span class="method get">GET</span>
+            <code>/api/health</code>
+            <span>Health check (no auth required)</span>
+          </div>
+          <div class="endpoint-row">
+            <span class="method get">GET</span>
+            <code>/api/documents/supported-types</code>
+            <span>List supported document types</span>
+          </div>
+          <div class="endpoint-row">
+            <span class="method post">POST</span>
+            <code>/api/documents/analyze-base64</code>
+            <span>Legacy base64 endpoint</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Response Fields -->
+      <div class="api-block">
+        <h3>📊 Response Fields</h3>
+        <div class="fields-grid">
+          <div class="field-item">
+            <code>isValid</code>
+            <span>Document validity (boolean)</span>
+          </div>
+          <div class="field-item">
+            <code>detectedType</code>
+            <span>INE, RFC, LICENCIA, etc.</span>
+          </div>
+          <div class="field-item">
+            <code>confidence</code>
+            <span>0.0 - 1.0 confidence score</span>
+          </div>
+          <div class="field-item">
+            <code>extractedData</code>
+            <span>Extracted fields object</span>
+          </div>
+          <div class="field-item">
+            <code>ocrEngine</code>
+            <span>"hybrid" or "gpt-4o-vision"</span>
+          </div>
+          <div class="field-item">
+            <code>imageQuality</code>
+            <span>buena, regular, mala, ilegible</span>
+          </div>
+          <div class="field-item">
+            <code>ocrCorrections</code>
+            <span>Applied OCR fixes (O→0, etc.)</span>
+          </div>
+          <div class="field-item">
+            <code>illegibleFields</code>
+            <span>Fields marked as ***</span>
+          </div>
+        </div>
       </div>
     </section>
 
