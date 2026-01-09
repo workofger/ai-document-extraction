@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { cors } from '../lib/cors.js';
 import { validateApiKey } from '../lib/auth.js';
-import { analyzeDocument, analyzeDocumentFromText } from '../lib/documentService.js';
+import { analyzeDocument } from '../lib/documentService.js';
 
 export const config = {
   api: {
@@ -56,7 +56,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const contentType = req.headers['content-type'] || '';
     
     let dataUrl: string = '';
-    let pdfText: string = '';
     let documentType: string = 'auto';
     let fileSizeKB: number = 0;
     let originalFormat: string = 'image';
@@ -86,11 +85,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       fileSizeKB = Math.round(parsed.file.buffer.length / 1024);
       documentType = parsed.fields.documentType || 'auto';
 
-      // If PDF, extract text with Google Document AI
+      // If PDF, convert to image with ConvertAPI
       if (PDF_TYPES.includes(parsed.file.mimeType)) {
-        console.log(`[${auth.apiKeyId}] Processing PDF with Google Document AI...`);
+        console.log(`[${auth.apiKeyId}] Converting PDF to image...`);
         originalFormat = 'pdf';
-        pdfText = await extractTextFromPdfWithDocumentAI(parsed.file.buffer);
+        dataUrl = await convertPdfToImage(parsed.file.buffer);
       } else {
         const base64 = parsed.file.buffer.toString('base64');
         dataUrl = `data:${parsed.file.mimeType};base64,${base64}`;
@@ -145,11 +144,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         fileSizeKB = Math.round(buffer.length / 1024);
         documentType = (body.documentType as string) || 'auto';
 
-        // If PDF, extract text with Google Document AI
+        // If PDF, convert to image with ConvertAPI
         if (PDF_TYPES.includes(effectiveMimeType) || isPdfUrl) {
-          console.log(`[${auth.apiKeyId}] Processing PDF from URL with Google Document AI...`);
+          console.log(`[${auth.apiKeyId}] Converting PDF from URL to image...`);
           originalFormat = 'pdf';
-          pdfText = await extractTextFromPdfWithDocumentAI(buffer);
+          dataUrl = await convertPdfToImage(buffer);
         } else {
           const base64 = buffer.toString('base64');
           dataUrl = `data:${mimeType};base64,${base64}`;
@@ -188,12 +187,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         fileSizeKB = Math.round(rawBase64.length / 1024);
         documentType = (body.documentType as string) || 'auto';
 
-        // If PDF, extract text with Google Document AI
+        // If PDF, convert to image with ConvertAPI
         if (PDF_TYPES.includes(mimeType)) {
-          console.log(`[${auth.apiKeyId}] Processing PDF base64 with Google Document AI...`);
+          console.log(`[${auth.apiKeyId}] Converting PDF base64 to image...`);
           originalFormat = 'pdf';
           const pdfBuffer = Buffer.from(rawBase64, 'base64');
-          pdfText = await extractTextFromPdfWithDocumentAI(pdfBuffer);
+          dataUrl = await convertPdfToImage(pdfBuffer);
         } else {
           dataUrl = `data:${mimeType};base64,${rawBase64}`;
         }
@@ -218,13 +217,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`[${auth.apiKeyId}] Analyzing document - type: ${documentType}, size: ${fileSizeKB}KB, format: ${originalFormat}`);
 
-    // Analyze document - PDFs use text extraction, images use vision
-    let result;
-    if (pdfText) {
-      result = await analyzeDocumentFromText(pdfText, documentType);
-    } else {
-      result = await analyzeDocument(dataUrl, documentType);
-    }
+    // Analyze document (images and converted PDFs use the same vision pipeline)
+    const result = await analyzeDocument(dataUrl, documentType);
 
     console.log(`[${auth.apiKeyId}] Result: ${result.isValid ? 'VALID' : 'INVALID'} - ${result.detectedType} (${result.processingTime}ms)`);
 
@@ -260,62 +254,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 /**
- * Extract text from PDF using Google Document AI
- * Returns extracted text for GPT processing
+ * Convert PDF to PNG image using ConvertAPI
+ * Returns base64 data URL of the first page
  */
-async function extractTextFromPdfWithDocumentAI(pdfBuffer: Buffer): Promise<string> {
-  const apiKey = process.env.GOOGLE_CLOUD_API_KEY;
-  const projectId = process.env.GOOGLE_PROJECT_ID || '110792412605';
-  const location = process.env.GOOGLE_LOCATION || 'us';
-  const processorId = process.env.GOOGLE_PROCESSOR_ID || '5766948fdfdc0f38';
+async function convertPdfToImage(pdfBuffer: Buffer): Promise<string> {
+  const apiSecret = process.env.CONVERTAPI_SECRET;
   
-  if (!apiKey) {
-    throw new Error('PDF processing not configured. GOOGLE_CLOUD_API_KEY is required.');
+  if (!apiSecret) {
+    throw new Error('PDF processing requires CONVERTAPI_SECRET. Get free API at https://www.convertapi.com/a/signup');
   }
   
   try {
-    console.log('[PDF] Processing PDF with Google Document AI...');
+    console.log('[PDF] Converting PDF to PNG via ConvertAPI...');
     
-    // Convert buffer to base64
     const pdfBase64 = pdfBuffer.toString('base64');
     
-    // Call Document AI API
-    const endpoint = `https://${location}-documentai.googleapis.com/v1/projects/${projectId}/locations/${location}/processors/${processorId}:process?key=${apiKey}`;
-    
-    const response = await fetch(endpoint, {
+    const response = await fetch(`https://v2.convertapi.com/convert/pdf/to/png?Secret=${apiSecret}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        rawDocument: {
-          content: pdfBase64,
-          mimeType: 'application/pdf'
-        }
+        Parameters: [
+          { Name: 'File', FileValue: { Name: 'document.pdf', Data: pdfBase64 } },
+          { Name: 'PageRange', Value: '1' },
+          { Name: 'ImageHeight', Value: '2000' },
+          { Name: 'ImageWidth', Value: '1500' }
+        ]
       })
     });
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[PDF] Document AI error:', errorText);
-      throw new Error(`Document AI processing failed: ${response.status}`);
+      console.error('[PDF] ConvertAPI error:', errorText);
+      throw new Error(`PDF conversion failed: ${response.status}`);
     }
     
     const result = await response.json();
     
-    // Extract text from Document AI response
-    const text = result.document?.text || '';
-    
-    if (!text || text.trim().length === 0) {
-      throw new Error('No text could be extracted from PDF');
+    if (!result.Files || result.Files.length === 0) {
+      throw new Error('No output from PDF conversion');
     }
     
-    console.log(`[PDF] Document AI extracted ${text.length} characters`);
-    
-    return text;
+    console.log('[PDF] Successfully converted PDF to PNG');
+    return `data:image/png;base64,${result.Files[0].FileData}`;
     
   } catch (error) {
-    console.error('Document AI error:', error);
+    console.error('PDF conversion error:', error);
     throw new Error(`Failed to process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
