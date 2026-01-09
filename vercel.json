@@ -3,12 +3,7 @@
   "version": 2,
   "name": "docval-api",
   "buildCommand": "",
-  "outputDirectory": "public",
   "framework": null,
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/(.*)", "dest": "/index.html" }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
