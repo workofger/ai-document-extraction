@@ -686,25 +686,27 @@
               </div>
               <div class="endpoint-body">
                 <p class="endpoint-desc">
-                  <strong>Main endpoint.</strong> Analyze document images and extract structured data.
+                  <strong>Main endpoint.</strong> Analyze document images or PDFs and extract structured data.
                 </p>
                 <p class="endpoint-formats">
-                  <strong>Accepts:</strong> Image URL, file upload (multipart), or base64<br>
-                  <strong>Formats:</strong> JPEG, PNG, WebP, GIF, PDF
+                  <strong>Accepts:</strong> Image URL, file upload (multipart), base64, or PDF<br>
+                  <strong>Formats:</strong> JPEG, PNG, WebP, GIF, PDF<br>
+                  <strong>PDF note:</strong> Multi-page PDFs → first page extracted automatically
                 </p>
 
                 <div class="request-options">
-                  <button class="req-opt active" onclick="selectReqType('url')">URL</button>
+                  <button class="req-opt active" onclick="selectReqType('url')">Image URL</button>
+                  <button class="req-opt" onclick="selectReqType('pdfurl')">PDF URL</button>
                   <button class="req-opt" onclick="selectReqType('file')">File Upload</button>
                   <button class="req-opt" onclick="selectReqType('base64')">Base64</button>
                 </div>
 
-                <!-- URL Request -->
+                <!-- Image URL Request -->
                 <div id="req-url" class="request-content active">
                   <div class="code-block">
                     <div class="code-header">
                       <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
-                      <span class="code-title">curl</span>
+                      <span class="code-title">curl - Image URL</span>
                     </div>
                     <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
   -H <span class="cs">"Content-Type: application/json"</span> \
@@ -713,16 +715,36 @@
                   </div>
                 </div>
 
+                <!-- PDF URL Request -->
+                <div id="req-pdfurl" class="request-content">
+                  <div class="code-block">
+                    <div class="code-header">
+                      <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                      <span class="code-title">curl - PDF URL</span>
+                    </div>
+                    <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="cs">"Content-Type: application/json"</span> \
+  -H <span class="cs">"X-API-Key: YOUR_API_KEY"</span> \
+  -d <span class="cs">'{"url": "https://storage.example.com/<span id="pdfurl-example">constancia_fiscal</span>.pdf"}'</span></pre>
+                  </div>
+                </div>
+
                 <!-- File Upload Request -->
                 <div id="req-file" class="request-content">
                   <div class="code-block">
                     <div class="code-header">
                       <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
-                      <span class="code-title">curl</span>
+                      <span class="code-title">curl - File Upload (image or PDF)</span>
                     </div>
-                    <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+                    <pre><span class="cs"># Image upload</span>
+curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
   -H <span class="cs">"X-API-Key: YOUR_API_KEY"</span> \
-  -F <span class="cs">"file=@<span id="file-example">ine</span>.jpg"</span></pre>
+  -F <span class="cs">"file=@<span id="file-example">ine</span>.jpg"</span>
+
+<span class="cs"># PDF upload</span>
+curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="cs">"X-API-Key: YOUR_API_KEY"</span> \
+  -F <span class="cs">"file=@documento.pdf"</span></pre>
                   </div>
                 </div>
 
@@ -731,12 +753,19 @@
                   <div class="code-block">
                     <div class="code-header">
                       <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
-                      <span class="code-title">curl</span>
+                      <span class="code-title">curl - Base64 (image or PDF)</span>
                     </div>
-                    <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+                    <pre><span class="cs"># Image base64</span>
+curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
   -H <span class="cs">"Content-Type: application/json"</span> \
   -H <span class="cs">"X-API-Key: YOUR_API_KEY"</span> \
-  -d <span class="cs">'{"base64": "data:image/jpeg;base64,/9j/4AAQ..."}'</span></pre>
+  -d <span class="cs">'{"document": "data:image/jpeg;base64,/9j/4AAQ..."}'</span>
+
+<span class="cs"># PDF base64</span>
+curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="cs">"Content-Type: application/json"</span> \
+  -H <span class="cs">"X-API-Key: YOUR_API_KEY"</span> \
+  -d <span class="cs">'{"document": "data:application/pdf;base64,JVBERi0..."}'</span></pre>
                   </div>
                 </div>
 
@@ -1115,6 +1144,7 @@
       document.getElementById('doc-desc').textContent = data.desc;
       document.getElementById('doc-fields-list').innerHTML = data.fields.map(f => `<code>${f}</code>`).join('');
       document.getElementById('url-example').textContent = data.filename;
+      document.getElementById('pdfurl-example').textContent = data.filename;
       document.getElementById('file-example').textContent = data.filename;
       document.getElementById('validate-field').textContent = data.validateField;
       document.getElementById('validate-value').textContent = data.validateValue;
