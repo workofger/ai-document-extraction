@@ -1,6 +1,703 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+
+// OpenAPI specification embedded directly for Vercel serverless compatibility
+const openapiSpec = {
+  openapi: '3.1.0',
+  info: {
+    title: 'DocVal API',
+    description: `Mexican document extraction and validation API for PartRunner.
+
+## Overview
+This API uses a hybrid OCR pipeline combining Google Cloud Vision and GPT-4o 
+to extract and validate data from Mexican official documents.
+
+## Key Features
+- **Hybrid OCR**: Google Vision for text extraction + GPT-4o for interpretation
+- **Auto-correction**: Common OCR errors (O→0, I→1) are automatically fixed
+- **Checksum validation**: CURP, RFC, CLABE, VIN verified mathematically
+- **Data integrity**: Never invents data; uses \`*\` for illegible characters
+
+## Supported Documents
+- INE/IFE (Voter ID)
+- Driver's License
+- RFC Certificate (Constancia de Situación Fiscal)
+- Vehicle Registration (Tarjeta de Circulación)
+- Insurance Policy
+- Bank Statement (Carátula Bancaria)`,
+    version: '1.0.0',
+    contact: {
+      name: 'PartRunner Engineering',
+      email: 'tech@partrunner.com'
+    },
+    license: {
+      name: 'Proprietary',
+      url: 'https://partrunner.com'
+    }
+  },
+  servers: [
+    {
+      url: 'https://ai-document-extraction.vercel.app',
+      description: 'Production server'
+    }
+  ],
+  tags: [
+    { name: 'Documents', description: 'Document analysis and validation endpoints' },
+    { name: 'System', description: 'Health and system information endpoints' }
+  ],
+  security: [{ ApiKeyAuth: [] }],
+  paths: {
+    '/api/health': {
+      get: {
+        tags: ['System'],
+        summary: 'Health check',
+        description: 'Returns API status and available endpoints. No authentication required.',
+        security: [],
+        responses: {
+          '200': {
+            description: 'API is healthy',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/HealthResponse' },
+                example: {
+                  status: 'ok',
+                  timestamp: '2026-01-08T20:30:00.000Z',
+                  version: '1.0.0',
+                  endpoints: {
+                    health: 'GET /api/health',
+                    analyze: 'POST /api/documents/analyze',
+                    analyzeBase64: 'POST /api/documents/analyze-base64',
+                    supportedTypes: 'GET /api/documents/supported-types',
+                    validateField: 'POST /api/documents/validate-field'
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/documents/supported-types': {
+      get: {
+        tags: ['Documents'],
+        summary: 'List supported document types',
+        description: 'Returns all supported document types with their extractable fields.',
+        responses: {
+          '200': {
+            description: 'List of supported document types',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/SupportedTypesResponse' }
+              }
+            }
+          },
+          '401': { $ref: '#/components/responses/Unauthorized' }
+        }
+      }
+    },
+    '/api/documents/analyze': {
+      post: {
+        tags: ['Documents'],
+        summary: 'Analyze document image',
+        description: `Main endpoint for document analysis. Accepts images via URL, file upload, or base64.
+
+**Supported formats:** JPEG, PNG, WebP, GIF, PDF (first page extracted for multi-page PDFs)
+
+**Document type detection:** If not specified, the API automatically detects the document type.
+
+**Data integrity:** The API never invents data. Illegible characters are marked with \`*\` 
+and completely unreadable fields with \`***\`. Documents with 3+ illegible fields are rejected.`,
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                oneOf: [
+                  { $ref: '#/components/schemas/AnalyzeUrlRequest' },
+                  { $ref: '#/components/schemas/AnalyzeBase64Request' }
+                ]
+              },
+              examples: {
+                url: {
+                  summary: 'Image URL',
+                  value: {
+                    url: 'https://storage.example.com/documents/ine.jpg'
+                  }
+                },
+                base64: {
+                  summary: 'Base64 encoded image',
+                  value: {
+                    base64: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...',
+                    documentType: 'INE'
+                  }
+                }
+              }
+            },
+            'multipart/form-data': {
+              schema: { $ref: '#/components/schemas/AnalyzeFileRequest' }
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Document analyzed successfully',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/AnalyzeSuccessResponse' },
+                examples: {
+                  ine: {
+                    summary: 'INE Response',
+                    value: {
+                      success: true,
+                      data: {
+                        isValid: true,
+                        detectedType: 'INE',
+                        matchesExpected: true,
+                        reason: 'Valid document. 1 OCR correction applied.',
+                        confidence: 0.94,
+                        extractedData: {
+                          nombre: 'Juan Pérez García',
+                          curp: 'PEGJ850101HDFRRL09',
+                          claveElector: 'PRGRJN85010109H800',
+                          direccion: 'Calle Reforma 123, Col Centro',
+                          codigoPostal: '06600',
+                          vigencia: '2029',
+                          folio: '1234567890123'
+                        },
+                        ocrEngine: 'hybrid',
+                        visionConfidence: 0.97,
+                        imageQuality: 'buena',
+                        ocrCorrections: ['Position 4: O → 0'],
+                        illegibleFields: [],
+                        crossValidationWarnings: [],
+                        processingTime: 1850,
+                        timestamp: '2026-01-09T02:00:00.000Z'
+                      }
+                    }
+                  },
+                  licencia: {
+                    summary: "Driver's License Response",
+                    value: {
+                      success: true,
+                      data: {
+                        isValid: true,
+                        detectedType: 'Licencia de Conducir',
+                        matchesExpected: true,
+                        confidence: 0.91,
+                        extractedData: {
+                          nombre: 'María López Hernández',
+                          curp: 'LOHM900515MDFRPR01',
+                          numeroLicencia: 'A123456789',
+                          tipoLicencia: 'Tipo A - Automovilista',
+                          vigencia: '2025-05-15',
+                          vigenciaFin: '2028-05-15',
+                          direccion: 'Av. Insurgentes 456',
+                          codigoPostal: '03100'
+                        },
+                        ocrEngine: 'hybrid',
+                        visionConfidence: 0.95,
+                        imageQuality: 'buena',
+                        ocrCorrections: [],
+                        illegibleFields: [],
+                        crossValidationWarnings: [],
+                        processingTime: 1720,
+                        timestamp: '2026-01-09T02:00:00.000Z'
+                      }
+                    }
+                  },
+                  rejected: {
+                    summary: 'Rejected (poor quality)',
+                    value: {
+                      success: true,
+                      data: {
+                        isValid: false,
+                        detectedType: 'INE',
+                        matchesExpected: true,
+                        reason: 'Image quality too poor. 4 illegible fields detected.',
+                        confidence: 0.35,
+                        extractedData: {
+                          nombre: '***',
+                          curp: 'PEGJ85****HDFRRL**',
+                          claveElector: '***',
+                          direccion: '***'
+                        },
+                        ocrEngine: 'hybrid',
+                        visionConfidence: 0.45,
+                        imageQuality: 'mala',
+                        ocrCorrections: [],
+                        illegibleFields: ['nombre', 'claveElector', 'direccion', 'folio'],
+                        crossValidationWarnings: ['CURP checksum invalid'],
+                        processingTime: 1200,
+                        timestamp: '2026-01-09T02:00:00.000Z'
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '422': { $ref: '#/components/responses/UnprocessableEntity' },
+          '429': { $ref: '#/components/responses/TooManyRequests' },
+          '500': { $ref: '#/components/responses/InternalError' }
+        }
+      }
+    },
+    '/api/documents/analyze-base64': {
+      post: {
+        tags: ['Documents'],
+        summary: 'Analyze base64 image (Legacy)',
+        description: '**⚠️ Legacy endpoint.** Use `/api/documents/analyze` instead.\n\nAccepts base64 encoded images only.',
+        deprecated: true,
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/AnalyzeBase64Request' },
+              example: {
+                base64: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...',
+                documentType: 'INE'
+              }
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Document analyzed successfully',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/AnalyzeSuccessResponse' }
+              }
+            }
+          },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalError' }
+        }
+      }
+    },
+    '/api/documents/validate-field': {
+      post: {
+        tags: ['Documents'],
+        summary: 'Validate and auto-correct field',
+        description: `Validates individual document fields using checksum algorithms.
+Automatically corrects common OCR errors when possible.
+
+**Supported fields:**
+- \`curp\` - CURP validation with checksum
+- \`rfc\` - RFC validation with checksum
+- \`clabe\` - CLABE interbank code validation
+- \`vin\` - Vehicle Identification Number validation
+- \`placas\` - Mexican license plate format validation`,
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ValidateFieldRequest' },
+              examples: {
+                curp: {
+                  summary: 'Validate CURP',
+                  value: { field: 'curp', value: 'PEGJ85O1O1HDFRRL09' }
+                },
+                rfc: {
+                  summary: 'Validate RFC',
+                  value: { field: 'rfc', value: 'PEGJ85O1O1ABC' }
+                },
+                clabe: {
+                  summary: 'Validate CLABE',
+                  value: { field: 'clabe', value: 'O12180001234567890' }
+                },
+                vin: {
+                  summary: 'Validate VIN',
+                  value: { field: 'vin', value: '1HGBH41JXMNI09186' }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Field validation result',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ValidateFieldResponse' },
+                examples: {
+                  valid_corrected: {
+                    summary: 'Valid with corrections',
+                    value: {
+                      success: true,
+                      data: {
+                        field: 'curp',
+                        originalValue: 'PEGJ85O1O1HDFRRL09',
+                        valid: true,
+                        corrected: 'PEGJ850101HDFRRL09',
+                        confidence: 0.95,
+                        corrections: ['Position 4: O → 0', 'Position 6: O → 0']
+                      }
+                    }
+                  },
+                  invalid: {
+                    summary: 'Invalid field',
+                    value: {
+                      success: true,
+                      data: {
+                        field: 'curp',
+                        originalValue: 'INVALID123',
+                        valid: false,
+                        corrected: null,
+                        confidence: 0,
+                        corrections: [],
+                        error: 'Invalid CURP format'
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '400': { $ref: '#/components/responses/BadRequest' },
+          '401': { $ref: '#/components/responses/Unauthorized' },
+          '500': { $ref: '#/components/responses/InternalError' }
+        }
+      }
+    }
+  },
+  components: {
+    securitySchemes: {
+      ApiKeyAuth: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'X-API-Key',
+        description: 'API key provided by PartRunner Engineering'
+      }
+    },
+    schemas: {
+      AnalyzeUrlRequest: {
+        type: 'object',
+        required: ['url'],
+        properties: {
+          url: {
+            type: 'string',
+            format: 'uri',
+            description: 'URL of the image to analyze',
+            example: 'https://storage.example.com/documents/ine.jpg'
+          },
+          documentType: {
+            type: 'string',
+            description: 'Expected document type (optional, auto-detected if not provided)',
+            enum: ['INE', 'Licencia de Conducir', 'Constancia de Situación Fiscal', 'Tarjeta de Circulación', 'Póliza de Seguro', 'Carátula Bancaria', 'auto'],
+            default: 'auto'
+          }
+        }
+      },
+      AnalyzeBase64Request: {
+        type: 'object',
+        required: ['base64'],
+        properties: {
+          base64: {
+            type: 'string',
+            description: 'Base64 encoded image (with or without data URL prefix)',
+            example: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...'
+          },
+          documentType: {
+            type: 'string',
+            description: 'Expected document type (optional, auto-detected if not provided)',
+            enum: ['INE', 'Licencia de Conducir', 'Constancia de Situación Fiscal', 'Tarjeta de Circulación', 'Póliza de Seguro', 'Carátula Bancaria', 'auto'],
+            default: 'auto'
+          }
+        }
+      },
+      AnalyzeFileRequest: {
+        type: 'object',
+        required: ['file'],
+        properties: {
+          file: {
+            type: 'string',
+            format: 'binary',
+            description: 'Image file (JPEG, PNG, WebP, GIF) or PDF document'
+          },
+          documentType: {
+            type: 'string',
+            description: 'Expected document type (optional)'
+          }
+        }
+      },
+      ValidateFieldRequest: {
+        type: 'object',
+        required: ['field', 'value'],
+        properties: {
+          field: {
+            type: 'string',
+            enum: ['curp', 'rfc', 'clabe', 'vin', 'placas'],
+            description: 'Field type to validate'
+          },
+          value: {
+            type: 'string',
+            description: 'Field value to validate',
+            example: 'PEGJ85O1O1HDFRRL09'
+          }
+        }
+      },
+      HealthResponse: {
+        type: 'object',
+        properties: {
+          status: { type: 'string', example: 'ok' },
+          timestamp: { type: 'string', format: 'date-time' },
+          version: { type: 'string', example: '1.0.0' },
+          endpoints: {
+            type: 'object',
+            additionalProperties: { type: 'string' }
+          }
+        }
+      },
+      SupportedTypesResponse: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: true },
+          types: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                type: { type: 'string' },
+                description: { type: 'string' },
+                fields: {
+                  type: 'array',
+                  items: { type: 'string' }
+                }
+              }
+            }
+          }
+        }
+      },
+      AnalyzeSuccessResponse: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: true },
+          data: { $ref: '#/components/schemas/AnalysisResult' }
+        }
+      },
+      AnalysisResult: {
+        type: 'object',
+        properties: {
+          isValid: {
+            type: 'boolean',
+            description: 'Whether the document is valid and readable'
+          },
+          detectedType: {
+            type: 'string',
+            description: 'Detected document type',
+            example: 'INE'
+          },
+          matchesExpected: {
+            type: 'boolean',
+            description: 'Whether detected type matches expected type (if provided)'
+          },
+          reason: {
+            type: 'string',
+            description: 'Explanation of validation result',
+            example: 'Valid document. 1 OCR correction applied.'
+          },
+          confidence: {
+            type: 'number',
+            format: 'float',
+            minimum: 0,
+            maximum: 1,
+            description: 'Overall confidence score',
+            example: 0.94
+          },
+          extractedData: {
+            type: 'object',
+            description: 'Extracted fields (varies by document type)',
+            additionalProperties: { type: 'string' }
+          },
+          ocrEngine: {
+            type: 'string',
+            enum: ['hybrid', 'gpt4o-only'],
+            description: 'OCR engine used for extraction'
+          },
+          visionConfidence: {
+            type: 'number',
+            format: 'float',
+            description: 'Google Vision OCR confidence (if hybrid)',
+            example: 0.97
+          },
+          imageQuality: {
+            type: 'string',
+            enum: ['buena', 'regular', 'mala', 'ilegible'],
+            description: 'Assessed image quality'
+          },
+          ocrCorrections: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'List of OCR corrections applied',
+            example: ['Position 4: O → 0']
+          },
+          illegibleFields: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Fields that could not be read',
+            example: []
+          },
+          crossValidationWarnings: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Warnings from cross-validation checks',
+            example: []
+          },
+          timestamp: {
+            type: 'string',
+            format: 'date-time',
+            description: 'Timestamp of when the analysis was performed',
+            example: '2026-01-09T02:00:00.000Z'
+          },
+          processingTime: {
+            type: 'integer',
+            description: 'Processing time in milliseconds',
+            example: 1850
+          },
+          originalFormat: {
+            type: 'string',
+            enum: ['image', 'pdf'],
+            description: 'Original file format (PDF files are converted to images for processing)'
+          }
+        }
+      },
+      ValidateFieldResponse: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: true },
+          data: {
+            type: 'object',
+            properties: {
+              field: { type: 'string', example: 'curp' },
+              originalValue: { type: 'string', example: 'PEGJ85O1O1HDFRRL09' },
+              valid: { type: 'boolean', example: true },
+              corrected: {
+                type: 'string',
+                nullable: true,
+                description: 'Corrected value (null if no correction needed or invalid)',
+                example: 'PEGJ850101HDFRRL09'
+              },
+              confidence: { type: 'number', format: 'float', example: 0.95 },
+              corrections: {
+                type: 'array',
+                items: { type: 'string' },
+                example: ['Position 4: O → 0', 'Position 6: O → 0']
+              },
+              error: {
+                type: 'string',
+                nullable: true,
+                description: 'Error message if validation failed'
+              }
+            }
+          }
+        }
+      },
+      ErrorResponse: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: false },
+          error: {
+            type: 'string',
+            description: 'Error message',
+            example: 'Invalid request body'
+          },
+          details: {
+            type: 'string',
+            nullable: true,
+            description: 'Additional error details'
+          }
+        }
+      }
+    },
+    responses: {
+      BadRequest: {
+        description: 'Invalid request',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            examples: {
+              missing_image: {
+                summary: 'Missing image',
+                value: {
+                  success: false,
+                  error: 'No image provided. Send url, base64, or file upload.'
+                }
+              },
+              invalid_format: {
+                summary: 'Invalid format',
+                value: {
+                  success: false,
+                  error: 'Unsupported file format. Use JPEG, PNG, WebP, GIF, or PDF.'
+                }
+              },
+              pdf_error: {
+                summary: 'PDF processing error',
+                value: {
+                  success: false,
+                  error: 'Failed to process PDF: Could not extract page',
+                  code: 'PDF_PROCESSING_ERROR',
+                  hint: 'Try with a clearer PDF or use an image instead'
+                }
+              }
+            }
+          }
+        }
+      },
+      Unauthorized: {
+        description: 'Missing or invalid API key',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              success: false,
+              error: 'Missing or invalid API key'
+            }
+          }
+        }
+      },
+      UnprocessableEntity: {
+        description: 'Unable to process document',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              success: false,
+              error: 'Could not extract data from image',
+              details: 'Image quality too low for reliable extraction'
+            }
+          }
+        }
+      },
+      TooManyRequests: {
+        description: 'Rate limit exceeded',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              success: false,
+              error: 'Rate limit exceeded. Please try again later.'
+            }
+          }
+        }
+      },
+      InternalError: {
+        description: 'Server error',
+        content: {
+          'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            example: {
+              success: false,
+              error: 'Internal server error',
+              details: 'An unexpected error occurred during processing'
+            }
+          }
+        }
+      }
+    }
+  }
+};
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
@@ -16,27 +713,17 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  try {
-    // Read the OpenAPI spec file
-    const specPath = join(process.cwd(), 'public', 'openapi.yaml');
-    const spec = readFileSync(specPath, 'utf-8');
-
-    // Return based on Accept header or query param
-    const format = req.query.format || 'yaml';
-    
-    if (format === 'json') {
-      // Convert YAML to JSON
-      const yaml = require('yaml');
-      const parsed = yaml.parse(spec);
-      res.setHeader('Content-Type', 'application/json');
-      return res.status(200).json(parsed);
-    }
-
+  // Return the spec based on format query param
+  const format = req.query.format || 'json';
+  
+  if (format === 'yaml') {
+    // Convert to YAML if requested
+    const yaml = require('yaml');
+    const yamlContent = yaml.stringify(openapiSpec);
     res.setHeader('Content-Type', 'text/yaml');
-    return res.status(200).send(spec);
-  } catch (error) {
-    console.error('Error reading OpenAPI spec:', error);
-    return res.status(500).json({ error: 'Failed to load OpenAPI specification' });
+    return res.status(200).send(yamlContent);
   }
-}
 
+  res.setHeader('Content-Type', 'application/json');
+  return res.status(200).json(openapiSpec);
+}
