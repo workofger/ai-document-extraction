@@ -1,9 +1,10 @@
-# DocVal API
+# DocVal API v1.1
 
 API de validación de documentos mexicanos con **pipeline híbrido OCR**:
 1. 🔍 **Google Cloud Vision** - Extracción de texto de alta precisión
 2. 🧠 **GPT-4o** - Interpretación semántica y estructuración
-3. ✅ **Checksum Validation** - Verificación matemática (CURP, RFC, CLABE)
+3. ✅ **Checksum Validation** - Verificación matemática (CURP, RFC, CLABE, VIN, NSS)
+4. 🛡️ **Fraud Detection** - Análisis de autenticidad y detección de inconsistencias
 
 ## 🚀 Endpoints
 
@@ -12,8 +13,9 @@ API de validación de documentos mexicanos con **pipeline híbrido OCR**:
 | GET | `/api/health` | Health check (sin auth) |
 | POST | `/api/documents/analyze` | Analizar imagen (URL, base64, file) |
 | POST | `/api/documents/analyze-base64` | Analizar documento (solo base64) |
-| POST | `/api/documents/validate-field` | Validar CURP/RFC/CLABE/VIN |
+| POST | `/api/documents/validate-field` | Validar CURP/RFC/CLABE/VIN/NSS |
 | GET | `/api/documents/supported-types` | Listar tipos soportados |
+| GET | `/api/metrics` | Dashboard de métricas y estadísticas |
 
 ## 🔐 Autenticación
 
@@ -75,10 +77,37 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
     "ocrEngine": "hybrid",
     "visionConfidence": 0.97,
     "imageQuality": "buena",
+    "ocrCorrections": ["Verification digit: 8 → 9 (checksum)"],
+    "fraudAnalysis": {
+      "isAuthentic": true,
+      "riskLevel": "low",
+      "riskScore": 5,
+      "fraudIndicators": [],
+      "recommendations": []
+    },
     "processingTime": 1850
   }
 }
 ```
+
+## 🛡️ Detección de Fraude
+
+Cada análisis incluye un objeto `fraudAnalysis` con:
+
+- **riskLevel**: `low` | `medium` | `high` | `critical`
+- **riskScore**: 0-100 (mayor = más riesgo)
+- **fraudIndicators**: Lista de indicadores detectados
+- **recommendations**: Recomendaciones de acción
+
+**Indicadores detectados:**
+- Inconsistencias CURP ↔ RFC
+- Código de estado inválido en CURP
+- Género inconsistente
+- Fechas de nacimiento imposibles
+- Documentos vencidos
+- Fechas de vigencia sospechosas
+- Patrones de nombres de prueba
+- Campos ilegibles excesivos
 
 ### Validar Campo
 
@@ -98,19 +127,82 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/validate-fi
     "originalValue": "PEGJ85O1O1HDFRRL09",
     "valid": true,
     "corrected": "PEGJ850101HDFRRL09",
-    "corrections": ["Position 4: O → 0", "Position 6: O → 0"]
+    "confidence": 0.94,
+    "corrections": ["Position 4: O → 0", "Position 6: O → 0", "Verification digit: 8 → 9 (checksum)"]
   }
 }
 ```
 
-## 📋 Tipos de Documento Soportados
+**Campos validables:** `curp`, `rfc`, `clabe`, `vin`, `placas`, `nss`
 
-- **INE** - Credencial para votar
-- **Licencia** - Licencia de conducir
-- **RFC** - Constancia de situación fiscal
-- **Tarjeta de Circulación** - Tarjeta vehicular
-- **Póliza de Seguro** - Póliza de seguro vehicular
-- **CLABE** - Datos bancarios
+### Métricas y Dashboard
+
+```bash
+curl https://ai-document-extraction.vercel.app/api/metrics \
+  -H "X-API-Key: tu-api-key"
+```
+
+**Respuesta:**
+```json
+{
+  "success": true,
+  "data": {
+    "overview": {
+      "totalRequests": 1542,
+      "successRate": "94.50%",
+      "uptime": "2h 35m"
+    },
+    "fraud": {
+      "totalChecks": 1450,
+      "flaggedDocuments": 12,
+      "flagRate": "0.83%"
+    },
+    "capabilities": {
+      "supportedDocumentTypes": 24,
+      "extractableFields": 35,
+      "validatableFields": ["curp", "rfc", "clabe", "vin", "placas", "nss"]
+    }
+  }
+}
+```
+
+## 📋 Tipos de Documento Soportados (24+)
+
+### 📇 Identificación Personal
+- **INE/IFE** - Credencial de elector
+- **Licencia de Conducir** - Licencia mexicana
+- **Pasaporte** - Pasaporte mexicano
+- **Cédula Profesional** - Cédula de la SEP
+- **Cartilla Militar** - Servicio Militar Nacional
+
+### 📋 Seguridad Social
+- **IMSS** - Credencial y NSS
+- **ISSSTE** - Credencial ISSSTE
+
+### 💼 Documentos Fiscales
+- **Constancia RFC** - Constancia de situación fiscal
+- **Carátula Bancaria** - Estado de cuenta
+
+### 🚗 Documentos Vehiculares
+- **Tarjeta de Circulación** - Registro vehicular
+- **Póliza de Seguro** - Seguro vehicular
+- **Verificación Vehicular** - Constancia de verificación
+
+### 📸 Fotografías de Vehículos
+- **Foto Frontal** - Vista frontal del vehículo
+- **Foto Lateral** - Vista lateral
+- **Foto Trasera** - Vista trasera con placas
+- **Foto VIN** - Número de serie
+- **Foto Motor** - Compartimento del motor
+- **Foto Odómetro** - Tablero y kilometraje
+- **Foto Placas** - Placas vehiculares
+- **Foto Daños** - Documentación de daños
+
+### 🏠 Otros
+- **Comprobante de Domicilio** - CFE, agua, gas, teléfono
+- **Acta Constitutiva** - Empresas
+- **Poder Notarial** - Poderes legales
+- **Carta de Antecedentes** - No antecedentes penales
 
 ## 🔧 Environment Variables
 
@@ -145,7 +237,8 @@ docval-api/
 │   ├── lib/
 │   │   ├── auth.ts               # Autenticación X-API-Key
 │   │   ├── cors.ts               # Middleware CORS
-│   │   ├── documentService.ts    # Pipeline híbrido
+│   │   ├── documentService.ts    # Pipeline híbrido + validaciones
+│   │   ├── fraudDetection.ts     # Detección de fraude
 │   │   └── googleVisionService.ts # Google Cloud Vision OCR
 │   ├── documents/
 │   │   ├── analyze.ts            # POST: Analizar (URL/file/base64)
@@ -153,8 +246,9 @@ docval-api/
 │   │   ├── validate-field.ts     # POST: Validar campo
 │   │   └── supported-types.ts    # GET: Tipos soportados
 │   ├── health.ts                 # GET: Health check
+│   ├── metrics.ts                # GET: Dashboard de métricas
 │   └── tsconfig.json
-├── index.html                    # Documentación
+├── index.html                    # Documentación interactiva
 ├── package.json
 ├── tsconfig.json
 └── vercel.json

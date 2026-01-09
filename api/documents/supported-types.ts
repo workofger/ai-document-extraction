@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { cors } from '../lib/cors.js';
 import { validateApiKey } from '../lib/auth.js';
-import { SUPPORTED_DOCUMENT_TYPES, EXTRACTABLE_FIELDS, VALIDATABLE_FIELDS } from '../lib/documentService.js';
+import { SUPPORTED_DOCUMENT_TYPES, EXTRACTABLE_FIELDS, VALIDATABLE_FIELDS, DOCUMENT_CATEGORIES, VEHICLE_TYPES } from '../lib/documentService.js';
 
 /**
  * GET /api/documents/supported-types
@@ -42,8 +42,10 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     success: true,
     data: {
       documentTypes: SUPPORTED_DOCUMENT_TYPES,
+      documentCategories: DOCUMENT_CATEGORIES,
       extractableFields: EXTRACTABLE_FIELDS,
       validatableFields: VALIDATABLE_FIELDS,
+      vehicleTypes: VEHICLE_TYPES,
       usage: {
         analyze: {
           endpoint: 'POST /api/documents/analyze',

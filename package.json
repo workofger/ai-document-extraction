@@ -1,7 +1,7 @@
 {
   "name": "docval-api",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "API de validación de documentos mexicanos con GPT-4o Vision",
   "scripts": {

@@ -89,7 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Perform validation
-    const result = validateField(field as 'curp' | 'rfc' | 'clabe' | 'vin' | 'placas', value);
+    const result = validateField(field as 'curp' | 'rfc' | 'clabe' | 'vin' | 'placas' | 'nss', value);
 
     // Log
     console.log(`[${auth.apiKeyId}] Validated ${field}: ${result.valid ? 'VALID' : 'INVALID'} (${result.corrections?.length || 0} corrections)`);

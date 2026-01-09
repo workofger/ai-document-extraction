@@ -849,9 +849,9 @@
         <div class="content">
           <!-- Hero -->
           <div class="hero">
-            <div class="hero-label">Internal API Documentation</div>
+            <div class="hero-label">Internal API Documentation v1.1</div>
             <h1>DocVal <span class="hl">API</span></h1>
-            <p>Mexican document extraction & validation service. Hybrid OCR pipeline: Google Vision + GPT-4o + checksum validation.</p>
+            <p>Mexican document extraction & validation service. Hybrid OCR pipeline: Google Vision + GPT-4o + checksum validation + fraud detection. Supports 24+ document types including vehicle photos.</p>
             <div class="hero-info">
               <span>Base URL: <strong>ai-document-extraction.vercel.app</strong></span>
               <span>Auth: <strong>X-API-Key header</strong></span>
@@ -864,10 +864,13 @@
             <div class="doc-tabs">
               <button class="doc-tab active" onclick="selectDoc('ine')">INE / IFE</button>
               <button class="doc-tab" onclick="selectDoc('licencia')">Driver's License</button>
+              <button class="doc-tab" onclick="selectDoc('cedula')">Professional License</button>
+              <button class="doc-tab" onclick="selectDoc('imss')">IMSS / ISSSTE</button>
               <button class="doc-tab" onclick="selectDoc('rfc')">RFC Certificate</button>
               <button class="doc-tab" onclick="selectDoc('circulacion')">Vehicle Reg.</button>
               <button class="doc-tab" onclick="selectDoc('poliza')">Insurance</button>
               <button class="doc-tab" onclick="selectDoc('banco')">Bank Statement</button>
+              <button class="doc-tab" onclick="selectDoc('foto_vehiculo')">Vehicle Photos</button>
             </div>
             <div class="doc-description">
               <span id="doc-desc">Mexican voter ID card with photo, personal data, and unique identifiers.</span>
@@ -1020,7 +1023,7 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
                   <strong>Validate & auto-correct</strong> individual fields with checksum verification.
                 </p>
                 <p class="endpoint-formats">
-                  <strong>Supported fields:</strong> <code>curp</code> <code>rfc</code> <code>clabe</code> <code>vin</code> <code>placas</code>
+                  <strong>Supported fields:</strong> <code>curp</code> <code>rfc</code> <code>clabe</code> <code>vin</code> <code>placas</code> <code>nss</code>
                 </p>
 
                 <div class="code-block">
@@ -1100,6 +1103,51 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
                 <p class="endpoint-desc">Legacy endpoint. Base64 only. Use <code>/api/documents/analyze</code> instead.</p>
               </div>
             </div>
+
+            <div class="endpoint">
+              <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/metrics</span>
+                <span class="endpoint-auth">🔐 Auth Required</span>
+              </div>
+              <div class="endpoint-body">
+                <p class="endpoint-desc">
+                  <strong>API Metrics & Dashboard.</strong> Returns usage statistics, document type breakdown, processing times, and fraud detection metrics.
+                </p>
+                <div class="code-block">
+                  <div class="code-header">
+                    <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                    <span class="code-title">Response</span>
+                  </div>
+                  <pre>{
+  <span class="ck">"success"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"overview"</span>: {
+      <span class="ck">"totalRequests"</span>: <span class="cn">1542</span>,
+      <span class="ck">"successRate"</span>: <span class="cs">"94.50%"</span>,
+      <span class="ck">"uptime"</span>: <span class="cs">"2h 35m"</span>
+    },
+    <span class="ck">"processing"</span>: {
+      <span class="ck">"avgProcessingTimeMs"</span>: <span class="cn">1850</span>
+    },
+    <span class="ck">"documentTypes"</span>: {
+      <span class="ck">"topUsed"</span>: { <span class="ck">"ine"</span>: <span class="cn">450</span>, <span class="ck">"licencia"</span>: <span class="cn">230</span> }
+    },
+    <span class="ck">"fraud"</span>: {
+      <span class="ck">"totalChecks"</span>: <span class="cn">1450</span>,
+      <span class="ck">"flaggedDocuments"</span>: <span class="cn">12</span>,
+      <span class="ck">"flagRate"</span>: <span class="cs">"0.83%"</span>
+    },
+    <span class="ck">"capabilities"</span>: {
+      <span class="ck">"supportedDocumentTypes"</span>: <span class="cn">24</span>,
+      <span class="ck">"extractableFields"</span>: <span class="cn">35</span>,
+      <span class="ck">"validatableFields"</span>: [<span class="cs">"curp"</span>, <span class="cs">"rfc"</span>, <span class="cs">"clabe"</span>, <span class="cs">"vin"</span>, <span class="cs">"placas"</span>, <span class="cs">"nss"</span>]
+    }
+  }
+}</pre>
+                </div>
+              </div>
+            </div>
           </section>
 
           <!-- Notes -->
@@ -1108,8 +1156,11 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
             <div class="info-box">
               <strong>⚠️ Data Integrity:</strong> The API never invents data. Illegible characters are marked with <code>*</code> and completely unreadable fields with <code>***</code>.<br><br>
               <strong>📋 Rejection:</strong> Documents with 3+ illegible fields or poor image quality are rejected (<code>isValid: false</code>).<br><br>
-              <strong>🔧 Auto-correction:</strong> Common OCR errors (O→0, I→1) are automatically corrected and logged in <code>ocrCorrections</code>.<br><br>
-              <strong>📷 Formats:</strong> JPEG, PNG, WebP, GIF, and PDF (first page extracted for multi-page PDFs).
+              <strong>🔧 Auto-correction:</strong> Common OCR errors (O→0, I→1) are automatically corrected and logged in <code>ocrCorrections</code>. CURP verification digit is validated and corrected using the official algorithm.<br><br>
+              <strong>🛡️ Fraud Detection:</strong> Every analysis includes a <code>fraudAnalysis</code> object with risk scoring (low/medium/high/critical), fraud indicators, and recommendations. Checks include: CURP checksum, state code validation, RFC cross-validation, expiration dates, and data consistency.<br><br>
+              <strong>✅ Validatable Fields:</strong> <code>curp</code> <code>rfc</code> <code>clabe</code> <code>vin</code> <code>placas</code> <code>nss</code><br><br>
+              <strong>📷 Formats:</strong> JPEG, PNG, WebP, GIF, and PDF (first page extracted for multi-page PDFs).<br><br>
+              <strong>🚗 Vehicle Photos:</strong> Supports analysis of vehicle photographs (frontal, lateral, rear, VIN plate, motor, odometer, damage photos) with automatic brand/model identification.
             </div>
           </section>
         </div>
@@ -1162,7 +1213,7 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
     const docData = {
       ine: {
         desc: "Mexican voter ID card with photo, personal data, and unique identifiers.",
-        fields: ["nombre", "curp", "claveElector", "direccion", "codigoPostal", "vigencia", "folio"],
+        fields: ["nombre", "curp", "claveElector", "direccion", "codigoPostal", "vigencia", "folio", "sexo", "fechaNacimiento"],
         filename: "ine",
         validateField: "curp",
         validateValue: "PEGJ85O1O1HDFRRL09",
@@ -1186,8 +1237,15 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
     <span class="ck">"ocrEngine"</span>: <span class="cs">"hybrid"</span>,
     <span class="ck">"visionConfidence"</span>: <span class="cn">0.97</span>,
     <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
-    <span class="ck">"ocrCorrections"</span>: [<span class="cs">"Position 4: O → 0"</span>],
+    <span class="ck">"ocrCorrections"</span>: [<span class="cs">"Verification digit: 8 → 9 (checksum)"</span>],
     <span class="ck">"illegibleFields"</span>: [],
+    <span class="ck">"fraudAnalysis"</span>: {
+      <span class="ck">"isAuthentic"</span>: <span class="cb">true</span>,
+      <span class="ck">"riskLevel"</span>: <span class="cs">"low"</span>,
+      <span class="ck">"riskScore"</span>: <span class="cn">5</span>,
+      <span class="ck">"fraudIndicators"</span>: [],
+      <span class="ck">"recommendations"</span>: []
+    },
     <span class="ck">"processingTime"</span>: <span class="cn">1850</span>
   }
 }`
@@ -1358,11 +1416,87 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
     <span class="ck">"ocrEngine"</span>: <span class="cs">"hybrid"</span>,
     <span class="ck">"visionConfidence"</span>: <span class="cn">0.93</span>,
     <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
-    <span class="ck">"ocrCorrections"</span>: [<span class="cs">"CLABE Position 0: O → 0"</span>, <span class="cs">"CLABE Position 5: O → 0"</span>, <span class="cs">"CLABE Position 6: O → 0"</span>],
-    <span class="ck">"illegibleFields"</span>: [],
-    <span class="ck">"crossValidationWarnings"</span>: [],
-    <span class="ck">"timestamp"</span>: <span class="cs">"2026-01-09T02:00:00.000Z"</span>,
+    <span class="ck">"ocrCorrections"</span>: [<span class="cs">"CLABE Position 0: O → 0"</span>],
+    <span class="ck">"fraudAnalysis"</span>: {
+      <span class="ck">"isAuthentic"</span>: <span class="cb">true</span>,
+      <span class="ck">"riskLevel"</span>: <span class="cs">"low"</span>,
+      <span class="ck">"riskScore"</span>: <span class="cn">0</span>
+    },
     <span class="ck">"processingTime"</span>: <span class="cn">1780</span>
+  }
+}`
+      },
+      cedula: {
+        desc: "Professional License issued by SEP with professional title and institution.",
+        fields: ["nombre", "numeroCedula", "curp", "profesion", "institucionEducativa", "fechaTitulacion", "folio"],
+        filename: "cedula_profesional",
+        validateField: "curp",
+        validateValue: "GARM88O3O5MDFRRN09",
+        response: `{
+  <span class="ck">"success"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"isValid"</span>: <span class="cb">true</span>,
+    <span class="ck">"detectedType"</span>: <span class="cs">"Cédula Profesional"</span>,
+    <span class="ck">"confidence"</span>: <span class="cn">0.95</span>,
+    <span class="ck">"extractedData"</span>: {
+      <span class="ck">"nombre"</span>: <span class="cs">"María García Ramírez"</span>,
+      <span class="ck">"numeroCedula"</span>: <span class="cs">"12345678"</span>,
+      <span class="ck">"curp"</span>: <span class="cs">"GARM880305MDFRRN09"</span>,
+      <span class="ck">"profesion"</span>: <span class="cs">"Licenciatura en Ingeniería en Sistemas"</span>,
+      <span class="ck">"institucionEducativa"</span>: <span class="cs">"Instituto Politécnico Nacional"</span>,
+      <span class="ck">"fechaTitulacion"</span>: <span class="cs">"2012-06-15"</span>
+    },
+    <span class="ck">"fraudAnalysis"</span>: { <span class="ck">"isAuthentic"</span>: <span class="cb">true</span>, <span class="ck">"riskLevel"</span>: <span class="cs">"low"</span> },
+    <span class="ck">"processingTime"</span>: <span class="cn">1650</span>
+  }
+}`
+      },
+      imss: {
+        desc: "IMSS credential or Social Security Number document.",
+        fields: ["nombre", "nss", "curp", "clinicaAsignada", "delegacion"],
+        filename: "imss",
+        validateField: "nss",
+        validateValue: "12345678901",
+        response: `{
+  <span class="ck">"success"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"isValid"</span>: <span class="cb">true</span>,
+    <span class="ck">"detectedType"</span>: <span class="cs">"Credencial IMSS"</span>,
+    <span class="ck">"confidence"</span>: <span class="cn">0.93</span>,
+    <span class="ck">"extractedData"</span>: {
+      <span class="ck">"nombre"</span>: <span class="cs">"Juan Pérez García"</span>,
+      <span class="ck">"nss"</span>: <span class="cs">"12345678901"</span>,
+      <span class="ck">"curp"</span>: <span class="cs">"PEGJ850101HDFRRL09"</span>,
+      <span class="ck">"clinicaAsignada"</span>: <span class="cs">"UMF No. 28"</span>,
+      <span class="ck">"delegacion"</span>: <span class="cs">"Delegación Norte CDMX"</span>
+    },
+    <span class="ck">"fraudAnalysis"</span>: { <span class="ck">"isAuthentic"</span>: <span class="cb">true</span>, <span class="ck">"riskLevel"</span>: <span class="cs">"low"</span> },
+    <span class="ck">"processingTime"</span>: <span class="cn">1580</span>
+  }
+}`
+      },
+      foto_vehiculo: {
+        desc: "Vehicle photographs for registration, insurance, or inspection purposes.",
+        fields: ["marca", "modelo", "color", "placas", "tipoVehiculo", "estadoVehiculo", "vin"],
+        filename: "foto_vehiculo",
+        validateField: "vin",
+        validateValue: "1HGBH41JXMNI09186",
+        response: `{
+  <span class="ck">"success"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"isValid"</span>: <span class="cb">true</span>,
+    <span class="ck">"detectedType"</span>: <span class="cs">"Fotografía Frontal de Vehículo"</span>,
+    <span class="ck">"confidence"</span>: <span class="cn">0.88</span>,
+    <span class="ck">"extractedData"</span>: {
+      <span class="ck">"marca"</span>: <span class="cs">"Honda"</span>,
+      <span class="ck">"modelo"</span>: <span class="cs">"Civic"</span>,
+      <span class="ck">"color"</span>: <span class="cs">"Blanco"</span>,
+      <span class="ck">"placas"</span>: <span class="cs">"ABC-123-A"</span>,
+      <span class="ck">"tipoVehiculo"</span>: <span class="cs">"sedan"</span>,
+      <span class="ck">"estadoVehiculo"</span>: <span class="cs">"bueno"</span>
+    },
+    <span class="ck">"fraudAnalysis"</span>: { <span class="ck">"isAuthentic"</span>: <span class="cb">true</span>, <span class="ck">"riskLevel"</span>: <span class="cs">"low"</span> },
+    <span class="ck">"processingTime"</span>: <span class="cn">2100</span>
   }
 }`
       }

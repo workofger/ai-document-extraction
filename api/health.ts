@@ -30,7 +30,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     success: true,
     status: allHealthy ? 'healthy' : 'degraded',
     service: 'DocVal API',
-    version: '1.0.0',
+    version: '1.1.0',
     platform: 'vercel-serverless',
     region: process.env.VERCEL_REGION || 'unknown',
     timestamp: new Date().toISOString(),
@@ -41,6 +41,14 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       analyzeBase64: 'POST /api/documents/analyze-base64',
       validateField: 'POST /api/documents/validate-field',
       supportedTypes: 'GET /api/documents/supported-types',
+      metrics: 'GET /api/metrics',
+    },
+    features: {
+      hybridOCR: 'Google Vision + GPT-4o',
+      fraudDetection: true,
+      vehiclePhotoAnalysis: true,
+      pdfSupport: true,
+      validatableFields: ['curp', 'rfc', 'clabe', 'vin', 'placas', 'nss']
     }
   });
 }

@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { extractTextWithVision, normalizeOCRText, VisionOCRResult } from './googleVisionService.js';
+import { detectFraud, FraudAnalysis } from './fraudDetection.js';
 
 // ===========================================
 // TYPES
@@ -30,6 +31,35 @@ export interface ExtractedData {
   telefono?: string;
   email?: string;
   numeroCuenta?: string;
+  // Cédula Profesional
+  numeroCedula?: string;
+  profesion?: string;
+  institucionEducativa?: string;
+  fechaTitulacion?: string;
+  // IMSS / ISSSTE
+  nss?: string;
+  clinicaAsignada?: string;
+  delegacion?: string;
+  // Cartilla Militar
+  numeroCartilla?: string;
+  claseCartilla?: string;
+  // Pasaporte
+  numeroPasaporte?: string;
+  nacionalidad?: string;
+  lugarNacimiento?: string;
+  fechaNacimiento?: string;
+  sexo?: string;
+  // Comprobante de domicilio
+  tipoServicio?: string;
+  numeroContrato?: string;
+  periodoFacturado?: string;
+  // Vehículo
+  tipoVehiculo?: string;
+  color?: string;
+  numeroMotor?: string;
+  numeroPlacas?: string;
+  estadoVehiculo?: string;
+  // Genérico
   [key: string]: string | undefined;
 }
 
@@ -48,6 +78,7 @@ export interface DocumentAnalysisResult {
   illegibleFields?: string[];
   ocrEngine?: 'google-vision' | 'gpt-4o-vision' | 'hybrid';
   visionConfidence?: number;
+  fraudAnalysis?: FraudAnalysis;
 }
 
 export interface FieldValidationResult {
@@ -97,6 +128,35 @@ const normalizeOCRString = (
 // FIELD VALIDATORS
 // ===========================================
 
+/**
+ * Calculate CURP verification digit using official algorithm
+ * Uses dictionary: 0-9, A-Z (excluding Ñ), mapping to 0-35
+ */
+const calculateCURPVerificationDigit = (curp17: string): string => {
+  const dictionary = '0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ';
+  let sum = 0;
+  
+  for (let i = 0; i < 17; i++) {
+    const char = curp17[i];
+    const index = dictionary.indexOf(char);
+    if (index === -1) return '0'; // Invalid character
+    sum += index * (18 - i);
+  }
+  
+  const digit = 10 - (sum % 10);
+  return digit === 10 ? '0' : String(digit);
+};
+
+/**
+ * Validate Mexican state codes in CURP (positions 11-12)
+ */
+const VALID_STATE_CODES = [
+  'AS', 'BC', 'BS', 'CC', 'CL', 'CM', 'CS', 'CH', 'DF', 'DG',
+  'GT', 'GR', 'HG', 'JC', 'MC', 'MN', 'MS', 'NT', 'NL', 'OC',
+  'PL', 'QT', 'QR', 'SP', 'SL', 'SR', 'TC', 'TS', 'TL', 'VZ',
+  'YN', 'ZS', 'NE' // NE = Nacido en el Extranjero
+];
+
 export const validateAndFixCURP = (curp: string): FieldValidationResult => {
   if (!curp) return { valid: false, corrected: '', confidence: 0 };
   
@@ -113,11 +173,24 @@ export const validateAndFixCURP = (curp: string): FieldValidationResult => {
     }
   }
   
-  const letterPositions = [0, 1, 2, 3, 10, 11, 12, 13, 14, 15];
+  // Position rules for CURP:
+  // 0-3: First 4 letters (surname initial, first vowel, maternal initial, name initial)
+  // 4-9: Birth date YYMMDD (digits)
+  // 10: Gender H/M
+  // 11-12: State code (letters)
+  // 13-15: Consonants from names (letters)
+  // 16: Disambiguation digit (alphanumeric, 0-9 or A-Z depending on birth year)
+  // 17: Verification digit (0-9)
+  
+  const letterPositions = [0, 1, 2, 3, 11, 12, 13, 14, 15];
   const digitPositions = [4, 5, 6, 7, 8, 9];
+  const genderPosition = 10;
+  const disambiguationPosition = 16;
+  const verificationPosition = 17;
   
   const corrected = normalized.split('');
   
+  // Fix letter positions
   letterPositions.forEach(pos => {
     if (corrected[pos]) {
       const original = corrected[pos];
@@ -128,6 +201,7 @@ export const validateAndFixCURP = (curp: string): FieldValidationResult => {
     }
   });
   
+  // Fix digit positions (birthdate)
   digitPositions.forEach(pos => {
     if (corrected[pos]) {
       const original = corrected[pos];
@@ -138,12 +212,81 @@ export const validateAndFixCURP = (curp: string): FieldValidationResult => {
     }
   });
   
-  const result = corrected.join('');
-  const curpPattern = /^[A-Z]{4}\d{6}[HM][A-Z]{2}[A-Z]{3}[A-Z0-9]{2}$/;
-  const isValid = curpPattern.test(result);
-  const confidence = isValid ? Math.max(0.7, 1 - (corrections.length * 0.05)) : 0.4;
+  // Fix gender position (H or M only)
+  if (corrected[genderPosition]) {
+    const original = corrected[genderPosition];
+    if (original === '4' || original === 'A') {
+      corrected[genderPosition] = 'H';
+      corrections.push(`Position ${genderPosition}: ${original} → H (gender)`);
+    } else if (original !== 'H' && original !== 'M') {
+      // Try to determine from OCR errors
+      if (original === '|' || original === 'I' || original === '1') {
+        corrected[genderPosition] = 'H';
+        corrections.push(`Position ${genderPosition}: ${original} → H (gender)`);
+      }
+    }
+  }
   
-  return { valid: isValid, corrected: result, confidence, corrections };
+  // Fix disambiguation position (can be letter or digit depending on birth year)
+  // Born before 2000: 0-9, Born 2000+: A-Z
+  const birthYear = parseInt(corrected.slice(4, 6).join(''), 10);
+  if (corrected[disambiguationPosition]) {
+    const original = corrected[disambiguationPosition];
+    if (birthYear >= 0 && birthYear <= 99) {
+      // Could be either - normalize based on what looks right
+      if (/[A-Z]/.test(original)) {
+        // Keep as letter (likely born 2000+)
+      } else {
+        corrected[disambiguationPosition] = normalizeOCRString(corrected[disambiguationPosition], 'numeric');
+        if (original !== corrected[disambiguationPosition]) {
+          corrections.push(`Position ${disambiguationPosition}: ${original} → ${corrected[disambiguationPosition]}`);
+        }
+      }
+    }
+  }
+  
+  // Fix verification digit
+  if (corrected[verificationPosition]) {
+    const original = corrected[verificationPosition];
+    corrected[verificationPosition] = normalizeOCRString(corrected[verificationPosition], 'numeric');
+    if (original !== corrected[verificationPosition]) {
+      corrections.push(`Position ${verificationPosition}: ${original} → ${corrected[verificationPosition]}`);
+    }
+  }
+  
+  let result = corrected.join('');
+  
+  // Validate and fix verification digit
+  const expectedDigit = calculateCURPVerificationDigit(result.slice(0, 17));
+  const actualDigit = result[17];
+  
+  if (actualDigit !== expectedDigit) {
+    corrections.push(`Verification digit: ${actualDigit} → ${expectedDigit} (checksum)`);
+    result = result.slice(0, 17) + expectedDigit;
+  }
+  
+  // Validate state code
+  const stateCode = result.slice(11, 13);
+  const validStateCode = VALID_STATE_CODES.includes(stateCode);
+  
+  // Final pattern validation
+  const curpPattern = /^[A-Z]{4}\d{6}[HM][A-Z]{2}[A-Z]{3}[A-Z0-9]\d$/;
+  const patternValid = curpPattern.test(result);
+  const isValid = patternValid && validStateCode;
+  
+  // Calculate confidence based on corrections and validations
+  let confidence = 1.0;
+  confidence -= corrections.length * 0.03; // Each correction reduces confidence
+  if (!validStateCode) confidence -= 0.2;
+  if (!patternValid) confidence -= 0.3;
+  confidence = Math.max(0.3, confidence);
+  
+  return { 
+    valid: isValid, 
+    corrected: result, 
+    confidence, 
+    corrections: corrections.length > 0 ? corrections : undefined 
+  };
 };
 
 export const validateAndFixRFC = (rfc: string): FieldValidationResult => {
@@ -278,6 +421,71 @@ export const validateAndFixPlacas = (placas: string): FieldValidationResult => {
   return { valid: false, corrected: normalized, confidence: 0.3 };
 };
 
+/**
+ * Validate and fix NSS (Número de Seguro Social) - IMSS/ISSSTE
+ * Format: 11 digits with verification digit at position 11
+ * Structure: Subdelegación (2) + Año alta (2) + Año nacimiento (2) + Número (4) + Verificador (1)
+ */
+export const validateAndFixNSS = (nss: string): FieldValidationResult => {
+  if (!nss) return { valid: false, corrected: '', confidence: 0 };
+  
+  let normalized = normalizeOCRString(nss, 'numeric').replace(/\D/g, '');
+  const corrections: string[] = [];
+  
+  // NSS should be 11 digits
+  if (normalized.length !== 11) {
+    if (normalized.length === 10) {
+      normalized = '0' + normalized;
+      corrections.push('Added leading zero');
+    } else if (normalized.length === 12) {
+      normalized = normalized.slice(0, 11);
+      corrections.push('Removed extra digit');
+    } else {
+      return { 
+        valid: false, 
+        corrected: normalized, 
+        confidence: 0.3,
+        corrections: [`Invalid length: ${normalized.length} (expected 11)`]
+      };
+    }
+  }
+  
+  // Calculate verification digit (Luhn algorithm variant used by IMSS)
+  const calculateNSSVerificationDigit = (nss10: string): string => {
+    let sum = 0;
+    for (let i = 0; i < 10; i++) {
+      let digit = parseInt(nss10[i], 10);
+      // Double every other digit starting from position 0
+      if (i % 2 === 0) {
+        digit *= 2;
+        if (digit > 9) digit -= 9;
+      }
+      sum += digit;
+    }
+    const verifier = (10 - (sum % 10)) % 10;
+    return String(verifier);
+  };
+  
+  const expectedDigit = calculateNSSVerificationDigit(normalized.slice(0, 10));
+  const actualDigit = normalized[10];
+  
+  if (actualDigit !== expectedDigit) {
+    corrections.push(`Verification digit: ${actualDigit} → ${expectedDigit}`);
+    normalized = normalized.slice(0, 10) + expectedDigit;
+  }
+  
+  // Basic structure validation
+  const isValid = /^\d{11}$/.test(normalized);
+  const confidence = isValid ? Math.max(0.7, 1 - corrections.length * 0.1) : 0.4;
+  
+  return {
+    valid: isValid,
+    corrected: normalized,
+    confidence,
+    corrections: corrections.length > 0 ? corrections : undefined
+  };
+};
+
 // ===========================================
 // POST-PROCESSING
 // ===========================================
@@ -375,6 +583,21 @@ const postProcessExtractedData = (data: ExtractedData): {
     }
   }
 
+  if (data.nss) {
+    if (isIllegible(data.nss)) {
+      illegibleFields.push('nss');
+      correctedData.nss = data.nss;
+    } else {
+      const result = validateAndFixNSS(data.nss);
+      if (result.corrected !== data.nss) {
+        corrections.push(`NSS: "${data.nss}" → "${result.corrected}"`);
+      }
+      correctedData.nss = result.corrected;
+      totalConfidence += result.confidence;
+      fieldCount++;
+    }
+  }
+
   if (data.nombre) {
     if (isIllegible(data.nombre)) {
       illegibleFields.push('nombre');
@@ -428,14 +651,15 @@ ${previousData.curp ? `- CURP registrado: "${previousData.curp}"` : ''}
 ${previousData.rfc ? `- RFC registrado: "${previousData.rfc}"` : ''}
 ${previousData.placas ? `- Placas registradas: "${previousData.placas}"` : ''}
 ${previousData.vin ? `- VIN registrado: "${previousData.vin}"` : ''}
+${previousData.nss ? `- NSS registrado: "${previousData.nss}"` : ''}
 
 Si encuentras estos datos en el documento, verifica si coinciden. Si no coinciden, inclúyelo en "crossValidationWarnings".
 `;
   }
 
-  return `Eres un experto en validación de documentos legales mexicanos.
+  return `Eres un experto en validación de documentos legales mexicanos y análisis de fotografías de vehículos.
 
-DOCUMENTO ESPERADO: "${expectedDocType === 'auto' ? 'Detectar automáticamente' : expectedDocType}"
+DOCUMENTO/IMAGEN ESPERADO: "${expectedDocType === 'auto' ? 'Detectar automáticamente' : expectedDocType}"
 
 ${crossValidationInstructions}
 
@@ -445,7 +669,7 @@ ${crossValidationInstructions}
 2. Si un carácter es ilegible, usa "*" en su lugar. Ejemplo: "PEGJ85*1*1HDFRRL09"
 3. Si un campo completo es ilegible, usa "***" como valor.
 4. Si la imagen es muy borrosa, oscura o ilegible, marca isValid: false y explica en reason.
-5. Solo extrae datos que PUEDAS VER CLARAMENTE en el documento.
+5. Solo extrae datos que PUEDAS VER CLARAMENTE en el documento o imagen.
 6. Prefiere dejar campos vacíos o con "***" antes que adivinar.
 
 CALIDAD DE IMAGEN:
@@ -454,21 +678,119 @@ CALIDAD DE IMAGEN:
 - confidence debe reflejar qué tan legible es el documento (0.0 a 1.0)
 
 FORMATOS MEXICANOS (solo para referencia, NO para inventar):
-- CURP: 18 caracteres (4 letras + 6 números + 1 letra género + 2 letras estado + 3 consonantes + 2 dígitos)
-- RFC: 12-13 caracteres
-- CLABE: 18 dígitos
+- CURP: 18 caracteres (4 letras + 6 números + H/M + 2 letras estado + 3 consonantes + 1 alfanumérico + 1 dígito verificador)
+- RFC: 12-13 caracteres (persona moral 12, persona física 13)
+- CLABE: 18 dígitos (3 banco + 3 plaza + 11 cuenta + 1 verificador)
+- NSS: 11 dígitos (IMSS/ISSSTE)
+- VIN: 17 caracteres alfanuméricos (sin I, O, Q)
 
-TIPOS DE DOCUMENTO: INE/IFE, Licencia de Conducir, Pasaporte, Tarjeta de Circulación, 
-Constancia Fiscal (RFC/SAT), Póliza de Seguro, Carátula Bancaria, Comprobante de Domicilio
+═══════════════════════════════════════════════════════════════════════════════
+TIPOS DE DOCUMENTO SOPORTADOS Y SUS CAMPOS ESPECÍFICOS:
+═══════════════════════════════════════════════════════════════════════════════
 
-CAMPOS: nombre, curp, rfc, claveElector, numeroLicencia, tipoLicencia, vigencia, 
-vigenciaFin, direccion, codigoPostal, placas, vin, modelo, marca, anio, aseguradora, 
-poliza, banco, clabe, numeroCuenta, razonSocial, telefono, email, folio
+📇 **IDENTIFICACIÓN PERSONAL:**
+
+• INE/IFE (Credencial de Elector)
+  → nombre, curp, claveElector, direccion, codigoPostal, vigencia, folio, sexo, fechaNacimiento
+
+• Licencia de Conducir
+  → nombre, curp, numeroLicencia, tipoLicencia, vigencia, vigenciaFin, direccion, codigoPostal
+
+• Pasaporte Mexicano
+  → nombre, numeroPasaporte, curp, nacionalidad, lugarNacimiento, fechaNacimiento, sexo, vigencia, vigenciaFin
+
+• Cédula Profesional
+  → nombre, numeroCedula, curp, profesion, institucionEducativa, fechaTitulacion, folio
+
+• Cartilla Militar (SMN)
+  → nombre, numeroCartilla, curp, claseCartilla, folio
+
+📋 **SEGURIDAD SOCIAL:**
+
+• Credencial IMSS / Tarjeta de Afiliación
+  → nombre, nss (Número de Seguro Social - 11 dígitos), curp, clinicaAsignada, delegacion
+
+• Credencial ISSSTE
+  → nombre, nss, curp, clinicaAsignada, delegacion
+
+💼 **DOCUMENTOS FISCALES:**
+
+• Constancia de Situación Fiscal (RFC/SAT)
+  → nombre, rfc, curp, razonSocial, direccion, codigoPostal, email, telefono, folio
+
+• Carátula Bancaria / Estado de Cuenta
+  → nombre, banco, clabe, numeroCuenta, rfc, direccion
+
+🚗 **DOCUMENTOS VEHICULARES:**
+
+• Tarjeta de Circulación
+  → nombre, placas, vin, marca, modelo, anio, vigencia, folio, numeroMotor
+
+• Póliza de Seguro Vehicular
+  → nombre, aseguradora, poliza, placas, vin, marca, modelo, vigencia, vigenciaFin
+
+• Verificación Vehicular
+  → placas, vin, marca, modelo, anio, vigencia, folio
+
+📸 **FOTOGRAFÍAS DE VEHÍCULOS:**
+Cuando la imagen sea una FOTOGRAFÍA DE UN VEHÍCULO (no un documento):
+
+• Fotografía Frontal de Vehículo
+  → marca (identificar por emblema/logo), modelo (si visible), color, placas (si visibles), tipoVehiculo (sedan/suv/pickup/motocicleta/camión/tractocamión/autobús), estadoVehiculo (bueno/regular/dañado)
+
+• Fotografía Lateral de Vehículo
+  → marca, modelo, color, tipoVehiculo, estadoVehiculo, placas (si visibles)
+
+• Fotografía Trasera de Vehículo
+  → marca, modelo, color, placas, tipoVehiculo, estadoVehiculo
+
+• Fotografía del VIN / Número de Serie
+  → vin (17 caracteres, buscar en placa metálica, sticker o grabado)
+
+• Fotografía del Motor
+  → numeroMotor (si visible), marca
+
+• Fotografía de Odómetro/Tablero
+  → kilometraje, marca, modelo
+
+• Fotografía de Placas
+  → placas, tipoVehiculo
+
+• Fotografía de Daños (para seguro)
+  → estadoVehiculo (descripción del daño), tipoVehiculo, color
+
+TIPOS DE VEHÍCULOS A IDENTIFICAR:
+- Automóvil (sedan, hatchback, coupé)
+- SUV / Crossover
+- Pickup / Camioneta
+- Van / Minivan
+- Motocicleta / Motoneta
+- Camión de carga (ligero, mediano, pesado)
+- Tractocamión / Trailer
+- Autobús / Camión de pasajeros
+- Vehículo agrícola / maquinaria
+- Remolque
+
+🏠 **OTROS DOCUMENTOS:**
+
+• Comprobante de Domicilio (CFE, Telmex, Agua, Gas)
+  → nombre, direccion, codigoPostal, tipoServicio, numeroContrato, periodoFacturado
+
+• Acta Constitutiva
+  → razonSocial, rfc, direccion, folio
+
+• Poder Notarial
+  → nombre, razonSocial, folio
+
+• Carta de No Antecedentes Penales
+  → nombre, curp, folio, vigencia
+
+═══════════════════════════════════════════════════════════════════════════════
 
 Responde SOLO con JSON válido:
 {
   "isValid": boolean,
-  "detectedType": "tipo detectado o 'Ilegible'",
+  "detectedType": "tipo detectado (ej: 'INE', 'Fotografía Frontal de Vehículo', 'Cédula Profesional')",
   "matchesExpected": boolean,
   "reason": "explicación - incluye si hay problemas de legibilidad",
   "confidence": 0.0-1.0,
@@ -492,6 +814,7 @@ ${previousData.curp ? `- CURP registrado: "${previousData.curp}"` : ''}
 ${previousData.rfc ? `- RFC registrado: "${previousData.rfc}"` : ''}
 ${previousData.placas ? `- Placas registradas: "${previousData.placas}"` : ''}
 ${previousData.vin ? `- VIN registrado: "${previousData.vin}"` : ''}
+${previousData.nss ? `- NSS registrado: "${previousData.nss}"` : ''}
 
 Si encuentras estos datos, verifica si coinciden con los del texto. Si no coinciden, inclúyelo en "crossValidationWarnings".
 `;
@@ -515,23 +838,48 @@ INSTRUCCIONES:
 4. Si un dato no está presente, NO lo incluyas en extractedData.
 5. NUNCA inventes datos que no estén en el texto.
 
-FORMATOS MEXICANOS:
-- CURP: 18 caracteres (ej: PEGJ850101HDFRRL09)
-- RFC: 12-13 caracteres (ej: PEGJ850101ABC)
-- CLABE: 18 dígitos (ej: 012180001234567890)
-- VIN: 17 caracteres alfanuméricos
+FORMATOS MEXICANOS (para referencia):
+- CURP: 18 caracteres (4 letras + 6 dígitos + H/M + 2 letras estado + 3 consonantes + 1 alfanumérico + 1 dígito)
+- RFC: 12-13 caracteres (persona moral 12, persona física 13)
+- CLABE: 18 dígitos
+- NSS: 11 dígitos (IMSS/ISSSTE)
+- VIN: 17 caracteres alfanuméricos (sin I, O, Q)
 
-TIPOS DE DOCUMENTO: INE/IFE, Licencia de Conducir, Pasaporte, Tarjeta de Circulación, 
-Constancia Fiscal (RFC/SAT), Póliza de Seguro, Carátula Bancaria, Comprobante de Domicilio
+═══════════════════════════════════════════════════════════════════════════════
+TIPOS DE DOCUMENTO SOPORTADOS:
+═══════════════════════════════════════════════════════════════════════════════
 
-CAMPOS A BUSCAR: nombre, curp, rfc, claveElector, numeroLicencia, tipoLicencia, vigencia, 
-vigenciaFin, direccion, codigoPostal, placas, vin, modelo, marca, anio, aseguradora, 
-poliza, banco, clabe, numeroCuenta, razonSocial, telefono, email, folio
+📇 IDENTIFICACIÓN:
+• INE/IFE → nombre, curp, claveElector, direccion, codigoPostal, vigencia, folio, sexo
+• Licencia de Conducir → nombre, curp, numeroLicencia, tipoLicencia, vigencia, vigenciaFin, direccion
+• Pasaporte → nombre, numeroPasaporte, curp, nacionalidad, lugarNacimiento, fechaNacimiento, vigencia
+• Cédula Profesional → nombre, numeroCedula, curp, profesion, institucionEducativa, fechaTitulacion
+• Cartilla Militar → nombre, numeroCartilla, curp, claseCartilla
+
+📋 SEGURIDAD SOCIAL:
+• IMSS / ISSSTE → nombre, nss, curp, clinicaAsignada, delegacion
+
+💼 FISCAL:
+• Constancia RFC/SAT → nombre, rfc, curp, razonSocial, direccion, codigoPostal, email
+• Carátula Bancaria → nombre, banco, clabe, numeroCuenta, rfc
+
+🚗 VEHICULAR:
+• Tarjeta de Circulación → nombre, placas, vin, marca, modelo, anio, vigencia, numeroMotor
+• Póliza de Seguro → nombre, aseguradora, poliza, placas, vin, marca, modelo, vigencia
+• Verificación Vehicular → placas, vin, marca, modelo, anio
+
+🏠 OTROS:
+• Comprobante de Domicilio → nombre, direccion, codigoPostal, tipoServicio, numeroContrato
+• Acta Constitutiva → razonSocial, rfc, direccion
+• Poder Notarial → nombre, razonSocial, folio
+• Carta de Antecedentes → nombre, curp, folio, vigencia
+
+═══════════════════════════════════════════════════════════════════════════════
 
 Responde SOLO con JSON válido:
 {
   "isValid": boolean,
-  "detectedType": "tipo detectado",
+  "detectedType": "tipo detectado (ej: 'INE', 'Cédula Profesional', 'IMSS')",
   "matchesExpected": boolean,
   "reason": "explicación",
   "confidence": 0.0-1.0,
@@ -700,7 +1048,15 @@ export async function analyzeDocument(
     // If too many fields are illegible, mark as invalid
     const shouldReject = illegibleFields.length >= 3 || isImageIllegible;
 
-    console.log(`[DocVal] Analysis complete: ${parsed.isValid && !shouldReject ? 'VALID' : 'INVALID'} - ${parsed.detectedType} (quality: ${imageQuality}, illegible: ${illegibleFields.length})`);
+    // Run fraud detection
+    const fraudAnalysis = detectFraud(
+      correctedData,
+      String(parsed.detectedType || 'unknown'),
+      illegibleFields,
+      imageQuality
+    );
+
+    console.log(`[DocVal] Analysis complete: ${parsed.isValid && !shouldReject ? 'VALID' : 'INVALID'} - ${parsed.detectedType} (quality: ${imageQuality}, illegible: ${illegibleFields.length}, fraud: ${fraudAnalysis.riskLevel})`);
 
     return {
       isValid: Boolean(parsed.isValid) && !shouldReject,
@@ -722,7 +1078,8 @@ export async function analyzeDocument(
       imageQuality,
       illegibleFields,
       ocrEngine: useVisionPipeline ? 'hybrid' : 'gpt-4o-vision',
-      visionConfidence: visionResult?.success ? visionResult.confidence : undefined
+      visionConfidence: visionResult?.success ? visionResult.confidence : undefined,
+      fraudAnalysis
     };
     
   } catch (error) {
@@ -741,7 +1098,7 @@ export async function analyzeDocument(
 }
 
 export function validateField(
-  field: 'curp' | 'rfc' | 'clabe' | 'vin' | 'placas',
+  field: 'curp' | 'rfc' | 'clabe' | 'vin' | 'placas' | 'nss',
   value: string
 ): FieldValidationResult {
   switch (field) {
@@ -755,6 +1112,8 @@ export function validateField(
       return validateAndFixVIN(value);
     case 'placas':
       return validateAndFixPlacas(value);
+    case 'nss':
+      return validateAndFixNSS(value);
     default:
       return { valid: false, corrected: value, confidence: 0 };
   }
@@ -826,7 +1185,15 @@ export async function analyzeDocumentFromText(
     const aiConfidence = Math.min(1, Math.max(0, Number(parsed.confidence) || 0));
     const combinedConfidence = Math.max(0, (aiConfidence * 0.6) + (overallConfidence * 0.4));
 
-    console.log(`[DocVal] PDF analysis complete: ${parsed.isValid ? 'VALID' : 'INVALID'} - ${parsed.detectedType}`);
+    // Run fraud detection
+    const fraudAnalysis = detectFraud(
+      correctedData,
+      String(parsed.detectedType || 'unknown'),
+      illegibleFields,
+      'pdf'
+    );
+
+    console.log(`[DocVal] PDF analysis complete: ${parsed.isValid ? 'VALID' : 'INVALID'} - ${parsed.detectedType} (fraud: ${fraudAnalysis.riskLevel})`);
 
     return {
       isValid: Boolean(parsed.isValid),
@@ -842,7 +1209,8 @@ export async function analyzeDocumentFromText(
       imageQuality: 'pdf',
       illegibleFields,
       ocrEngine: 'hybrid',
-      visionConfidence: 0.9 // PDFs usually have good text quality
+      visionConfidence: 0.9, // PDFs usually have good text quality
+      fraudAnalysis
     };
     
   } catch (error) {
@@ -856,28 +1224,105 @@ export async function analyzeDocumentFromText(
 // ===========================================
 
 export const SUPPORTED_DOCUMENT_TYPES = [
-  { id: 'ine', name: 'INE/IFE', description: 'Credencial de elector mexicana' },
-  { id: 'licencia', name: 'Licencia de Conducir', description: 'Licencia de conducir mexicana' },
-  { id: 'pasaporte', name: 'Pasaporte', description: 'Pasaporte mexicano' },
-  { id: 'circulacion', name: 'Tarjeta de Circulación', description: 'Tarjeta de circulación vehicular' },
-  { id: 'rfc', name: 'Constancia de Situación Fiscal', description: 'Constancia del SAT' },
-  { id: 'poliza', name: 'Póliza de Seguro', description: 'Póliza de seguro vehicular' },
-  { id: 'banco', name: 'Carátula Bancaria', description: 'Estado de cuenta o carátula bancaria' },
-  { id: 'domicilio', name: 'Comprobante de Domicilio', description: 'CFE, agua, teléfono, etc.' },
-  { id: 'acta', name: 'Acta Constitutiva', description: 'Acta constitutiva de empresa' },
-  { id: 'poder', name: 'Poder Notarial', description: 'Poder notarial' },
-  { id: 'vehiculo', name: 'Fotografía de Vehículo', description: 'Fotos del vehículo' },
-  { id: 'verificacion', name: 'Verificación Vehicular', description: 'Constancia de verificación' },
-  { id: 'antecedentes', name: 'Carta de Antecedentes', description: 'Carta de no antecedentes penales' },
-  { id: 'auto', name: 'Detección Automática', description: 'El sistema detecta el tipo' },
+  // Identificación Personal
+  { id: 'ine', name: 'INE/IFE', category: 'identificacion', description: 'Credencial de elector mexicana', fields: ['nombre', 'curp', 'claveElector', 'direccion', 'codigoPostal', 'vigencia', 'folio', 'sexo', 'fechaNacimiento'] },
+  { id: 'licencia', name: 'Licencia de Conducir', category: 'identificacion', description: 'Licencia de conducir mexicana', fields: ['nombre', 'curp', 'numeroLicencia', 'tipoLicencia', 'vigencia', 'vigenciaFin', 'direccion', 'codigoPostal'] },
+  { id: 'pasaporte', name: 'Pasaporte', category: 'identificacion', description: 'Pasaporte mexicano', fields: ['nombre', 'numeroPasaporte', 'curp', 'nacionalidad', 'lugarNacimiento', 'fechaNacimiento', 'sexo', 'vigencia', 'vigenciaFin'] },
+  { id: 'cedula', name: 'Cédula Profesional', category: 'identificacion', description: 'Cédula profesional de la SEP', fields: ['nombre', 'numeroCedula', 'curp', 'profesion', 'institucionEducativa', 'fechaTitulacion', 'folio'] },
+  { id: 'cartilla', name: 'Cartilla Militar', category: 'identificacion', description: 'Cartilla del Servicio Militar Nacional', fields: ['nombre', 'numeroCartilla', 'curp', 'claseCartilla', 'folio'] },
+  
+  // Seguridad Social
+  { id: 'imss', name: 'Credencial IMSS', category: 'seguridad_social', description: 'Credencial o número de seguro social IMSS', fields: ['nombre', 'nss', 'curp', 'clinicaAsignada', 'delegacion'] },
+  { id: 'issste', name: 'Credencial ISSSTE', category: 'seguridad_social', description: 'Credencial del ISSSTE', fields: ['nombre', 'nss', 'curp', 'clinicaAsignada', 'delegacion'] },
+  
+  // Documentos Fiscales
+  { id: 'rfc', name: 'Constancia de Situación Fiscal', category: 'fiscal', description: 'Constancia del SAT con RFC', fields: ['nombre', 'rfc', 'curp', 'razonSocial', 'direccion', 'codigoPostal', 'email', 'telefono', 'folio'] },
+  { id: 'banco', name: 'Carátula Bancaria', category: 'fiscal', description: 'Estado de cuenta o carátula bancaria', fields: ['nombre', 'banco', 'clabe', 'numeroCuenta', 'rfc', 'direccion'] },
+  
+  // Documentos Vehiculares
+  { id: 'circulacion', name: 'Tarjeta de Circulación', category: 'vehicular', description: 'Tarjeta de circulación vehicular', fields: ['nombre', 'placas', 'vin', 'marca', 'modelo', 'anio', 'vigencia', 'folio', 'numeroMotor'] },
+  { id: 'poliza', name: 'Póliza de Seguro', category: 'vehicular', description: 'Póliza de seguro vehicular', fields: ['nombre', 'aseguradora', 'poliza', 'placas', 'vin', 'marca', 'modelo', 'vigencia', 'vigenciaFin'] },
+  { id: 'verificacion', name: 'Verificación Vehicular', category: 'vehicular', description: 'Constancia de verificación vehicular', fields: ['placas', 'vin', 'marca', 'modelo', 'anio', 'vigencia', 'folio'] },
+  
+  // Fotografías de Vehículos
+  { id: 'foto_vehiculo_frontal', name: 'Foto Vehículo Frontal', category: 'foto_vehiculo', description: 'Fotografía frontal del vehículo', fields: ['marca', 'modelo', 'color', 'placas', 'tipoVehiculo', 'estadoVehiculo'] },
+  { id: 'foto_vehiculo_lateral', name: 'Foto Vehículo Lateral', category: 'foto_vehiculo', description: 'Fotografía lateral del vehículo', fields: ['marca', 'modelo', 'color', 'tipoVehiculo', 'estadoVehiculo', 'placas'] },
+  { id: 'foto_vehiculo_trasera', name: 'Foto Vehículo Trasera', category: 'foto_vehiculo', description: 'Fotografía trasera del vehículo', fields: ['marca', 'modelo', 'color', 'placas', 'tipoVehiculo', 'estadoVehiculo'] },
+  { id: 'foto_vin', name: 'Foto VIN/Serie', category: 'foto_vehiculo', description: 'Fotografía del número de serie VIN', fields: ['vin'] },
+  { id: 'foto_motor', name: 'Foto Motor', category: 'foto_vehiculo', description: 'Fotografía del motor', fields: ['numeroMotor', 'marca'] },
+  { id: 'foto_odometro', name: 'Foto Odómetro', category: 'foto_vehiculo', description: 'Fotografía del tablero/odómetro', fields: ['kilometraje', 'marca', 'modelo'] },
+  { id: 'foto_placas', name: 'Foto Placas', category: 'foto_vehiculo', description: 'Fotografía de las placas', fields: ['placas', 'tipoVehiculo'] },
+  { id: 'foto_danos', name: 'Foto Daños', category: 'foto_vehiculo', description: 'Fotografía de daños del vehículo', fields: ['estadoVehiculo', 'tipoVehiculo', 'color'] },
+  
+  // Otros Documentos
+  { id: 'domicilio', name: 'Comprobante de Domicilio', category: 'otros', description: 'CFE, Telmex, agua, gas, etc.', fields: ['nombre', 'direccion', 'codigoPostal', 'tipoServicio', 'numeroContrato', 'periodoFacturado'] },
+  { id: 'acta', name: 'Acta Constitutiva', category: 'otros', description: 'Acta constitutiva de empresa', fields: ['razonSocial', 'rfc', 'direccion', 'folio'] },
+  { id: 'poder', name: 'Poder Notarial', category: 'otros', description: 'Poder notarial', fields: ['nombre', 'razonSocial', 'folio'] },
+  { id: 'antecedentes', name: 'Carta de Antecedentes', category: 'otros', description: 'Carta de no antecedentes penales', fields: ['nombre', 'curp', 'folio', 'vigencia'] },
+  
+  // Detección Automática
+  { id: 'auto', name: 'Detección Automática', category: 'auto', description: 'El sistema detecta automáticamente el tipo de documento o imagen', fields: [] },
 ];
 
 export const EXTRACTABLE_FIELDS = [
-  'nombre', 'curp', 'rfc', 'claveElector', 'numeroLicencia', 'tipoLicencia',
-  'vigencia', 'vigenciaFin', 'direccion', 'codigoPostal', 'placas', 'vin',
-  'modelo', 'marca', 'anio', 'aseguradora', 'poliza', 'banco', 'clabe',
-  'numeroCuenta', 'razonSocial', 'telefono', 'email', 'folio'
+  // Identificación básica
+  'nombre', 'curp', 'rfc', 'sexo', 'fechaNacimiento', 'nacionalidad', 'lugarNacimiento',
+  // INE
+  'claveElector', 'folio',
+  // Licencia
+  'numeroLicencia', 'tipoLicencia',
+  // Pasaporte
+  'numeroPasaporte',
+  // Cédula Profesional
+  'numeroCedula', 'profesion', 'institucionEducativa', 'fechaTitulacion',
+  // Cartilla Militar
+  'numeroCartilla', 'claseCartilla',
+  // Seguridad Social
+  'nss', 'clinicaAsignada', 'delegacion',
+  // Vigencias
+  'vigencia', 'vigenciaFin',
+  // Dirección
+  'direccion', 'codigoPostal',
+  // Vehículo documento
+  'placas', 'vin', 'modelo', 'marca', 'anio', 'numeroMotor',
+  // Vehículo foto
+  'tipoVehiculo', 'color', 'estadoVehiculo', 'kilometraje',
+  // Seguro
+  'aseguradora', 'poliza',
+  // Bancario
+  'banco', 'clabe', 'numeroCuenta',
+  // Fiscal
+  'razonSocial',
+  // Domicilio
+  'tipoServicio', 'numeroContrato', 'periodoFacturado',
+  // Contacto
+  'telefono', 'email'
 ];
 
-export const VALIDATABLE_FIELDS = ['curp', 'rfc', 'clabe', 'vin', 'placas'];
+export const VALIDATABLE_FIELDS = ['curp', 'rfc', 'clabe', 'vin', 'placas', 'nss'];
+
+// Vehicle types for reference
+export const VEHICLE_TYPES = [
+  'sedan', 'hatchback', 'coupe', 'convertible',
+  'suv', 'crossover',
+  'pickup', 'camioneta',
+  'van', 'minivan',
+  'motocicleta', 'motoneta',
+  'camion_ligero', 'camion_mediano', 'camion_pesado',
+  'tractocamion', 'trailer',
+  'autobus', 'camion_pasajeros',
+  'vehiculo_agricola', 'maquinaria',
+  'remolque'
+];
+
+// Document categories
+export const DOCUMENT_CATEGORIES = {
+  identificacion: 'Identificación Personal',
+  seguridad_social: 'Seguridad Social',
+  fiscal: 'Documentos Fiscales',
+  vehicular: 'Documentos Vehiculares',
+  foto_vehiculo: 'Fotografías de Vehículos',
+  otros: 'Otros Documentos',
+  auto: 'Detección Automática'
+};
 
