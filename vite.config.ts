@@ -6,8 +6,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
   return {
-    // Base path for deployment at /doc_demo
-    base: '/doc_demo/',
+    // Base path for Vercel deployment (root)
+    base: '/',
     
     server: {
       port: 3000,
