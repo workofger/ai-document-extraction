@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
   <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DocVal API - Documentación</title>
+  <title>DocVal API - Documentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -38,6 +38,81 @@
       padding: 2rem;
     }
     
+    /* Login overlay */
+    .login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 3rem;
+      text-align: center;
+      max-width: 400px;
+    }
+    
+    .login-card img {
+      height: 48px;
+      margin-bottom: 1.5rem;
+    }
+    
+    .login-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .login-card h2::before {
+      display: none;
+    }
+    
+    .login-card p {
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+    
+    .google-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: white;
+      color: #333;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .google-btn:hover {
+      background: #f1f1f1;
+      transform: translateY(-1px);
+    }
+    
+    .google-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .login-error {
+      color: var(--red);
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+    
+    .hidden { display: none !important; }
+    
     /* Header */
     header {
       text-align: center;
@@ -47,6 +122,11 @@
     }
     
     .logo {
+      height: 40px;
+      margin-bottom: 1.5rem;
+    }
+    
+    .logo-text {
       font-size: 0.875rem;
       font-weight: 600;
       color: var(--accent);
@@ -95,6 +175,40 @@
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
+    }
+    
+    /* User info */
+    .user-info {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      z-index: 100;
+    }
+    
+    .user-info img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+    }
+    
+    .user-info button {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.25rem;
+    }
+    
+    .user-info button:hover {
+      color: var(--red);
     }
     
     /* Sections */
@@ -281,14 +395,38 @@
   </style>
   </head>
   <body>
-  <div class="container">
+  
+  <!-- Login Overlay -->
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+      <img src="/assets/logo.svg" alt="PartRunner" onerror="this.style.display='none'">
+      <h2>DocVal API</h2>
+      <p>Sign in with your PartRunner account to access the documentation.</p>
+      <button class="google-btn" onclick="signInWithGoogle()">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Sign in with Google
+      </button>
+      <p id="loginError" class="login-error hidden"></p>
+    </div>
+  </div>
+
+  <!-- User Info (shown when logged in) -->
+  <div id="userInfo" class="user-info hidden">
+    <img id="userAvatar" src="" alt="">
+    <span id="userName"></span>
+    <button onclick="signOut()" title="Sign out">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </div>
+
+  <div id="mainContent" class="container hidden">
     <header>
-      <div class="logo">PartRunner</div>
+      <img src="/assets/logo.svg" alt="PartRunner" class="logo" onerror="this.outerHTML='<div class=\'logo-text\'>PartRunner</div>'">
       <h1>DocVal API</h1>
-      <p class="tagline">API de validación de documentos mexicanos con Google Vision OCR + GPT-4o</p>
+      <p class="tagline">Mexican document validation API powered by Google Vision OCR + GPT-4o</p>
       <div class="status">
         <span class="status-dot"></span>
-        <span>Operativo</span>
+        <span>Operational</span>
       </div>
     </header>
 
@@ -300,43 +438,43 @@
     </section>
 
     <section>
-      <h2>🚀 Pipeline Híbrido OCR</h2>
+      <h2>🚀 Hybrid OCR Pipeline</h2>
       <div class="card">
         <p style="margin-bottom: 1rem; color: var(--text-muted);">
-          Esta API usa un <strong>pipeline de doble verificación</strong> para máxima precisión:
+          This API uses a <strong>dual-verification pipeline</strong> for maximum accuracy:
         </p>
         <table>
           <tbody>
             <tr>
               <td style="text-align: center; font-size: 1.5rem;">1️⃣</td>
               <td><strong>Google Cloud Vision OCR</strong></td>
-              <td>Extracción de texto de alta precisión</td>
+              <td>High-precision text extraction</td>
             </tr>
             <tr>
               <td style="text-align: center; font-size: 1.5rem;">2️⃣</td>
               <td><strong>GPT-4o Analysis</strong></td>
-              <td>Interpretación semántica y validación</td>
+              <td>Semantic interpretation & validation</td>
             </tr>
             <tr>
               <td style="text-align: center; font-size: 1.5rem;">3️⃣</td>
               <td><strong>Checksum Validation</strong></td>
-              <td>Verificación matemática (CURP, RFC, CLABE)</td>
+              <td>Mathematical verification (CURP, RFC, CLABE)</td>
             </tr>
           </tbody>
         </table>
         <p style="margin-top: 1rem; color: var(--yellow); font-size: 0.9rem;">
-          ⚠️ Los campos ilegibles se marcan con <code>***</code> en lugar de inventar datos.
+          ⚠️ Illegible fields are marked with <code>***</code> instead of inventing data.
         </p>
       </div>
     </section>
 
     <section>
-      <h2>Autenticación</h2>
+      <h2>Authentication</h2>
       <div class="card">
         <p style="margin-bottom: 1rem; color: var(--text-muted);">
-          Todas las rutas (excepto <code>/api/health</code>) requieren autenticación via header:
+          All routes (except <code>/api/health</code>) require authentication via header:
         </p>
-        <pre><code><span class="key">X-API-Key</span>: <span class="str">tu-api-key</span></code></pre>
+        <pre><code><span class="key">X-API-Key</span>: <span class="str">your-api-key</span></code></pre>
       </div>
     </section>
 
@@ -348,7 +486,7 @@
             <span class="method get">GET</span>
             <div class="endpoint-info">
               <div class="endpoint-path">/api/health</div>
-              <div class="endpoint-desc">Health check del servicio</div>
+              <div class="endpoint-desc">Service health check</div>
             </div>
           </div>
           
@@ -356,7 +494,7 @@
             <span class="method post">POST</span>
             <div class="endpoint-info">
               <div class="endpoint-path">/api/documents/analyze</div>
-              <div class="endpoint-desc">Analizar imagen (URL, base64 o file upload)</div>
+              <div class="endpoint-desc">Analyze image (URL, base64, or file upload)</div>
             </div>
             <span class="auth-badge">API Key</span>
           </div>
@@ -365,7 +503,7 @@
             <span class="method post">POST</span>
             <div class="endpoint-info">
               <div class="endpoint-path">/api/documents/analyze-base64</div>
-              <div class="endpoint-desc">Analizar documento (solo base64)</div>
+              <div class="endpoint-desc">Analyze document (base64 only)</div>
             </div>
             <span class="auth-badge">API Key</span>
           </div>
@@ -374,7 +512,7 @@
             <span class="method post">POST</span>
             <div class="endpoint-info">
               <div class="endpoint-path">/api/documents/validate-field</div>
-              <div class="endpoint-desc">Validar y corregir CURP, RFC, CLABE, VIN</div>
+              <div class="endpoint-desc">Validate and correct CURP, RFC, CLABE, VIN</div>
             </div>
             <span class="auth-badge">API Key</span>
           </div>
@@ -383,7 +521,7 @@
             <span class="method get">GET</span>
             <div class="endpoint-info">
               <div class="endpoint-path">/api/documents/supported-types</div>
-              <div class="endpoint-desc">Listar tipos de documento soportados</div>
+              <div class="endpoint-desc">List supported document types</div>
             </div>
             <span class="auth-badge">API Key</span>
           </div>
@@ -392,19 +530,19 @@
     </section>
 
     <section>
-      <h2>Analizar con URL (Recomendado)</h2>
+      <h2>Analyze with URL (Recommended)</h2>
       <div class="card">
         <p style="margin-bottom: 1rem; color: var(--text-muted);">
-          Envía solo la URL de la imagen. La API descarga y analiza automáticamente.
+          Send just the image URL. The API will download and analyze automatically.
         </p>
         <div class="code-header">
           <span class="code-label">Request</span>
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
         </div>
         <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
   -H <span class="str">"Content-Type: application/json"</span> \
-  -H <span class="str">"X-API-Key: tu-api-key"</span> \
-  -d <span class="str">'{"url": "https://ejemplo.com/documento.jpg"}'</span></code></pre>
+  -H <span class="str">"X-API-Key: your-api-key"</span> \
+  -d <span class="str">'{"url": "https://example.com/document.jpg"}'</span></code></pre>
       </div>
       
       <div class="card">
@@ -431,45 +569,45 @@
     </section>
 
     <section>
-      <h2>Analizar con File Upload</h2>
+      <h2>Analyze with File Upload</h2>
       <div class="card">
         <p style="margin-bottom: 1rem; color: var(--text-muted);">
-          Sube directamente archivos JPG, PNG, WebP o GIF.
+          Upload JPG, PNG, WebP, or GIF files directly.
         </p>
         <div class="code-header">
           <span class="code-label">Request (multipart/form-data)</span>
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
         </div>
         <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
-  -H <span class="str">"X-API-Key: tu-api-key"</span> \
-  -F <span class="str">"file=@documento.jpg"</span></code></pre>
+  -H <span class="str">"X-API-Key: your-api-key"</span> \
+  -F <span class="str">"file=@document.jpg"</span></code></pre>
       </div>
     </section>
 
     <section>
-      <h2>Analizar con Base64</h2>
+      <h2>Analyze with Base64</h2>
       <div class="card">
         <p style="margin-bottom: 1rem; color: var(--text-muted);">
-          Puedes usar <code>/api/documents/analyze</code> con base64 o el endpoint legacy <code>/api/documents/analyze-base64</code>.
+          You can use <code>/api/documents/analyze</code> with base64 or the legacy endpoint <code>/api/documents/analyze-base64</code>.
         </p>
         <div class="code-header">
-          <span class="code-label">Request (Endpoint unificado)</span>
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          <span class="code-label">Request (Unified endpoint)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
         </div>
         <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
   -H <span class="str">"Content-Type: application/json"</span> \
-  -H <span class="str">"X-API-Key: tu-api-key"</span> \
+  -H <span class="str">"X-API-Key: your-api-key"</span> \
   -d <span class="str">'{"base64": "data:image/jpeg;base64,/9j/4AAQ..."}'</span></code></pre>
       </div>
       
       <div class="card">
         <div class="code-header">
-          <span class="code-label">Request (Endpoint legacy)</span>
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          <span class="code-label">Request (Legacy endpoint)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
         </div>
         <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze-base64 \
   -H <span class="str">"Content-Type: application/json"</span> \
-  -H <span class="str">"X-API-Key: tu-api-key"</span> \
+  -H <span class="str">"X-API-Key: your-api-key"</span> \
   -d <span class="str">'{
     "document": "data:image/jpeg;base64,/9j/4AAQ..."
   }'</span></code></pre>
@@ -477,33 +615,33 @@
     </section>
 
     <section>
-      <h2>⚠️ Manejo de Datos Ilegibles</h2>
+      <h2>⚠️ Handling Illegible Data</h2>
       <div class="card">
         <p style="margin-bottom: 1rem; color: var(--text-muted);">
-          La API <strong>nunca inventa datos</strong>. Si un campo no se puede leer claramente:
+          The API <strong>never invents data</strong>. If a field cannot be read clearly:
         </p>
         <table>
           <tbody>
             <tr>
               <td><code>*</code></td>
-              <td>Carácter individual ilegible</td>
+              <td>Individual illegible character</td>
               <td><code>PEGJ85*1*1HDFRRL09</code></td>
             </tr>
             <tr>
               <td><code>***</code></td>
-              <td>Campo completamente ilegible</td>
+              <td>Completely illegible field</td>
               <td><code>"curp": "***"</code></td>
             </tr>
           </tbody>
         </table>
         <p style="margin-top: 1rem; color: var(--red); font-size: 0.9rem;">
-          🚫 Documentos con 3+ campos ilegibles o mala calidad se rechazan con <code>isValid: false</code>
+          🚫 Documents with 3+ illegible fields or poor quality are rejected with <code>isValid: false</code>
         </p>
       </div>
       
       <div class="card">
         <div class="code-header">
-          <span class="code-label">Ejemplo: Documento con campos ilegibles</span>
+          <span class="code-label">Example: Document with illegible fields</span>
         </div>
         <pre><code>{
   <span class="key">"success"</span>: <span class="bool">true</span>,
@@ -511,7 +649,7 @@
     <span class="key">"isValid"</span>: <span class="bool">false</span>,
     <span class="key">"detectedType"</span>: <span class="str">"INE"</span>,
     <span class="key">"confidence"</span>: <span class="num">0.45</span>,
-    <span class="key">"reason"</span>: <span class="str">"Documento rechazado: imagen de baja calidad"</span>,
+    <span class="key">"reason"</span>: <span class="str">"Document rejected: low quality image"</span>,
     <span class="key">"extractedData"</span>: {
       <span class="key">"nombre"</span>: <span class="str">"Juan P*rez Garc*a"</span>,
       <span class="key">"curp"</span>: <span class="str">"***"</span>
@@ -524,10 +662,10 @@
     </section>
 
     <section>
-      <h2>✅ Respuesta Exitosa Completa</h2>
+      <h2>✅ Complete Success Response</h2>
       <div class="card">
         <div class="code-header">
-          <span class="code-label">Todos los campos disponibles en una respuesta exitosa</span>
+          <span class="code-label">All available fields in a successful response</span>
         </div>
         <pre><code>{
   <span class="key">"success"</span>: <span class="bool">true</span>,
@@ -535,7 +673,7 @@
     <span class="key">"isValid"</span>: <span class="bool">true</span>,
     <span class="key">"detectedType"</span>: <span class="str">"INE"</span>,
     <span class="key">"matchesExpected"</span>: <span class="bool">true</span>,
-    <span class="key">"reason"</span>: <span class="str">"Documento válido. 2 correcciones OCR aplicadas."</span>,
+    <span class="key">"reason"</span>: <span class="str">"Valid document. 2 OCR corrections applied."</span>,
     <span class="key">"confidence"</span>: <span class="num">0.94</span>,
     <span class="key">"extractedData"</span>: {
       <span class="key">"nombre"</span>: <span class="str">"Juan Pérez García"</span>,
@@ -559,15 +697,15 @@
     </section>
 
     <section>
-      <h2>Validar Campo</h2>
+      <h2>Validate Field</h2>
       <div class="card">
         <div class="code-header">
           <span class="code-label">Request</span>
-          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
         </div>
         <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/validate-field \
   -H <span class="str">"Content-Type: application/json"</span> \
-  -H <span class="str">"X-API-Key: tu-api-key"</span> \
+  -H <span class="str">"X-API-Key: your-api-key"</span> \
   -d <span class="str">'{"field": "curp", "value": "PEGJ85O1O1HDFRRL09"}'</span></code></pre>
       </div>
       
@@ -589,45 +727,45 @@
     </section>
 
     <section>
-      <h2>Tipos de Documento</h2>
+      <h2>Document Types</h2>
       <div class="card">
         <table>
           <thead>
             <tr>
-              <th>Tipo</th>
-              <th>Descripción</th>
-              <th>Datos Extraídos</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Extracted Data</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><code>INE</code></td>
-              <td>Credencial para votar</td>
+              <td>Mexican Voter ID</td>
               <td>nombre, curp, claveElector, vigencia</td>
             </tr>
             <tr>
               <td><code>LICENCIA</code></td>
-              <td>Licencia de conducir</td>
+              <td>Driver's License</td>
               <td>nombre, numero, tipo, vigencia</td>
             </tr>
             <tr>
               <td><code>RFC</code></td>
-              <td>Constancia de situación fiscal</td>
+              <td>Tax ID Certificate</td>
               <td>rfc, nombre, domicilio, cp</td>
             </tr>
             <tr>
               <td><code>TARJETA_CIRCULACION</code></td>
-              <td>Tarjeta vehicular</td>
+              <td>Vehicle Registration</td>
               <td>placas, vin, modelo, propietario</td>
             </tr>
             <tr>
               <td><code>POLIZA_SEGURO</code></td>
-              <td>Póliza de seguro</td>
+              <td>Insurance Policy</td>
               <td>aseguradora, poliza, vigencia</td>
             </tr>
             <tr>
               <td><code>CLABE</code></td>
-              <td>Datos bancarios</td>
+              <td>Bank Account Details</td>
               <td>banco, clabe, titular</td>
             </tr>
           </tbody>
@@ -636,40 +774,40 @@
     </section>
 
     <section>
-      <h2>Campos Validables</h2>
+      <h2>Validatable Fields</h2>
       <div class="card">
         <table>
           <thead>
             <tr>
-              <th>Campo</th>
-              <th>Descripción</th>
-              <th>Ejemplo</th>
+              <th>Field</th>
+              <th>Description</th>
+              <th>Example</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><code>curp</code></td>
-              <td>Clave Única de Registro de Población</td>
+              <td>Unique Population Registry Key</td>
               <td>PEGJ850101HDFRRL09</td>
             </tr>
             <tr>
               <td><code>rfc</code></td>
-              <td>Registro Federal de Contribuyentes</td>
+              <td>Federal Taxpayer Registry</td>
               <td>PEGJ850101ABC</td>
             </tr>
             <tr>
               <td><code>clabe</code></td>
-              <td>Cuenta CLABE interbancaria</td>
+              <td>Interbank CLABE Account</td>
               <td>012180001234567890</td>
             </tr>
             <tr>
               <td><code>vin</code></td>
-              <td>Número de serie vehicular</td>
+              <td>Vehicle Identification Number</td>
               <td>1HGBH41JXMN109186</td>
             </tr>
             <tr>
               <td><code>placas</code></td>
-              <td>Placas vehiculares</td>
+              <td>License Plates</td>
               <td>ABC-123-A</td>
             </tr>
           </tbody>
@@ -678,36 +816,36 @@
     </section>
 
     <section>
-      <h2>Campos de Respuesta</h2>
+      <h2>Response Fields</h2>
       <div class="card">
         <table>
           <thead>
             <tr>
-              <th>Campo</th>
-              <th>Tipo</th>
-              <th>Descripción</th>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Description</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><code>isValid</code></td>
               <td>boolean</td>
-              <td>Documento válido y legible</td>
+              <td>Document is valid and readable</td>
             </tr>
             <tr>
               <td><code>detectedType</code></td>
               <td>string</td>
-              <td>Tipo de documento detectado</td>
+              <td>Detected document type</td>
             </tr>
             <tr>
               <td><code>confidence</code></td>
               <td>number</td>
-              <td>Nivel de confianza (0.0 - 1.0)</td>
+              <td>Confidence level (0.0 - 1.0)</td>
             </tr>
             <tr>
               <td><code>extractedData</code></td>
               <td>object</td>
-              <td>Datos extraídos del documento</td>
+              <td>Data extracted from document</td>
             </tr>
             <tr>
               <td><code>ocrEngine</code></td>
@@ -717,7 +855,7 @@
             <tr>
               <td><code>visionConfidence</code></td>
               <td>number</td>
-              <td>Confianza de Google Vision OCR</td>
+              <td>Google Vision OCR confidence</td>
             </tr>
             <tr>
               <td><code>imageQuality</code></td>
@@ -727,12 +865,12 @@
             <tr>
               <td><code>illegibleFields</code></td>
               <td>array</td>
-              <td>Campos que no pudieron leerse (marcados con ***)</td>
+              <td>Fields that couldn't be read (marked with ***)</td>
             </tr>
             <tr>
               <td><code>ocrCorrections</code></td>
               <td>array</td>
-              <td>Correcciones aplicadas (ej: O→0)</td>
+              <td>Applied corrections (e.g., O→0)</td>
             </tr>
           </tbody>
         </table>
@@ -740,41 +878,41 @@
     </section>
 
     <section>
-      <h2>Códigos de Error</h2>
+      <h2>Error Codes</h2>
       <div class="card">
         <table>
           <thead>
             <tr>
-              <th>Código</th>
+              <th>Code</th>
               <th>HTTP</th>
-              <th>Descripción</th>
+              <th>Description</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><code>MISSING_API_KEY</code></td>
               <td>401</td>
-              <td>Header X-API-Key no presente</td>
+              <td>X-API-Key header not present</td>
             </tr>
             <tr>
               <td><code>INVALID_API_KEY</code></td>
               <td>403</td>
-              <td>API Key inválida</td>
+              <td>Invalid API Key</td>
             </tr>
             <tr>
               <td><code>MISSING_DOCUMENT</code></td>
               <td>400</td>
-              <td>No se envió documento</td>
+              <td>No document sent</td>
             </tr>
             <tr>
               <td><code>INVALID_FIELD</code></td>
               <td>400</td>
-              <td>Campo no soportado</td>
+              <td>Unsupported field</td>
             </tr>
             <tr>
               <td><code>ANALYSIS_ERROR</code></td>
               <td>500</td>
-              <td>Error en análisis GPT-4o</td>
+              <td>GPT-4o analysis error</td>
             </tr>
           </tbody>
         </table>
@@ -782,19 +920,105 @@
     </section>
 
     <footer>
-      <p>Desarrollado por <a href="https://partrunner.com">PartRunner</a></p>
+      <p>Developed by <a href="https://partrunner.com">PartRunner</a></p>
     </footer>
   </div>
 
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  
   <script>
+    const GOOGLE_CLIENT_ID = ''; // Will be set from environment
+    const ALLOWED_DOMAIN = 'partrunner.com';
+    
+    // Check if user is already logged in
+    function checkAuth() {
+      const user = localStorage.getItem('docval_user');
+      if (user) {
+        const userData = JSON.parse(user);
+        // Check if token is still valid (24 hours)
+        if (Date.now() - userData.timestamp < 24 * 60 * 60 * 1000) {
+          showMainContent(userData);
+          return true;
+        }
+        localStorage.removeItem('docval_user');
+      }
+      return false;
+    }
+    
+    function showMainContent(userData) {
+      document.getElementById('loginOverlay').classList.add('hidden');
+      document.getElementById('mainContent').classList.remove('hidden');
+      document.getElementById('userInfo').classList.remove('hidden');
+      document.getElementById('userAvatar').src = userData.picture || '';
+      document.getElementById('userName').textContent = userData.name || userData.email;
+    }
+    
+    function showError(message) {
+      const errorEl = document.getElementById('loginError');
+      errorEl.textContent = message;
+      errorEl.classList.remove('hidden');
+    }
+    
+    function signInWithGoogle() {
+      // Check if Google Identity Services is loaded
+      if (typeof google === 'undefined' || !google.accounts) {
+        // Fallback: redirect to OAuth endpoint
+        window.location.href = '/api/auth/google';
+        return;
+      }
+      
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleCredentialResponse,
+        auto_select: false,
+      });
+      
+      google.accounts.id.prompt();
+    }
+    
+    function handleCredentialResponse(response) {
+      // Decode JWT to get user info
+      const payload = JSON.parse(atob(response.credential.split('.')[1]));
+      
+      // Check domain
+      if (!payload.email.endsWith('@' + ALLOWED_DOMAIN)) {
+        showError('Access restricted to @' + ALLOWED_DOMAIN + ' accounts only.');
+        return;
+      }
+      
+      // Store user data
+      const userData = {
+        email: payload.email,
+        name: payload.name,
+        picture: payload.picture,
+        timestamp: Date.now()
+      };
+      
+      localStorage.setItem('docval_user', JSON.stringify(userData));
+      showMainContent(userData);
+    }
+    
+    function signOut() {
+      localStorage.removeItem('docval_user');
+      window.location.reload();
+    }
+    
     function copyCode(btn) {
       const pre = btn.parentElement.nextElementSibling;
       const code = pre.textContent;
       navigator.clipboard.writeText(code);
-      btn.textContent = '¡Copiado!';
-      setTimeout(() => btn.textContent = 'Copiar', 2000);
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
     }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!checkAuth()) {
+        // Show login overlay
+        document.getElementById('loginOverlay').classList.remove('hidden');
+      }
+    });
   </script>
   </body>
 </html>
-

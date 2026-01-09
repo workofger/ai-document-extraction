@@ -112,13 +112,15 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/validate-fi
 - **Póliza de Seguro** - Póliza de seguro vehicular
 - **CLABE** - Datos bancarios
 
-## 🔧 Variables de Entorno
+## 🔧 Environment Variables
 
-| Variable | Descripción | Requerida |
-|----------|-------------|-----------|
-| `OPENAI_API_KEY` | API Key de OpenAI (GPT-4o) | ✅ Sí |
-| `API_KEY` | Clave para autenticar consumidores | ✅ Sí |
-| `GOOGLE_CLOUD_API_KEY` | API Key de Google Cloud Vision | ⚡ Recomendada |
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `OPENAI_API_KEY` | OpenAI API Key (GPT-4o) | ✅ Yes |
+| `API_KEY` | Key for API consumers | ✅ Yes |
+| `GOOGLE_CLOUD_API_KEY` | Google Cloud Vision API Key | ⚡ Recommended |
+| `GOOGLE_CLIENT_ID` | Google OAuth Client ID | 🔒 For docs auth |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret | 🔒 For docs auth |
 
 > **Nota**: Sin `GOOGLE_CLOUD_API_KEY`, la API funciona solo con GPT-4o Vision. Con ella habilitada, se activa el pipeline híbrido que mejora significativamente la precisión.
 
