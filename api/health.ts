@@ -37,7 +37,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     checks,
     endpoints: {
       health: 'GET /api/health',
-      analyze: 'POST /api/documents/analyze-base64',
+      analyze: 'POST /api/documents/analyze',
+      analyzeBase64: 'POST /api/documents/analyze-base64',
       validateField: 'POST /api/documents/validate-field',
       supportedTypes: 'GET /api/documents/supported-types',
     }

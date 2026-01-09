@@ -46,13 +46,30 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       validatableFields: VALIDATABLE_FIELDS,
       usage: {
         analyze: {
+          endpoint: 'POST /api/documents/analyze',
+          description: 'Analyze a document image and extract data (recommended)',
+          options: {
+            url: {
+              description: 'Send image URL - API downloads and analyzes',
+              body: { url: 'https://example.com/image.jpg' }
+            },
+            base64: {
+              description: 'Send base64 encoded image',
+              body: { document: 'data:image/jpeg;base64,...' }
+            },
+            fileUpload: {
+              description: 'Upload file directly (multipart/form-data)',
+              body: { file: 'image file' }
+            }
+          }
+        },
+        analyzeBase64: {
           endpoint: 'POST /api/documents/analyze-base64',
-          description: 'Analyze a document image and extract data',
+          description: 'Analyze document from base64 only',
           body: {
             document: 'Base64 encoded image or data URL (required)',
             mimeType: 'MIME type if not using data URL (optional)',
-            documentType: 'Expected document type or "auto" (optional, default: "auto")',
-            previousData: 'Previous extracted data for cross-validation (optional)'
+            documentType: 'Expected document type or "auto" (optional, default: "auto")'
           }
         },
         validateField: {
