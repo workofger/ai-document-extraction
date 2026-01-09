@@ -761,6 +761,97 @@ export function validateField(
 }
 
 // ===========================================
+// ANALYZE DOCUMENT FROM TEXT (for PDFs)
+// ===========================================
+
+export async function analyzeDocumentFromText(
+  text: string,
+  expectedDocType: string = 'auto',
+  previousData?: ExtractedData
+): Promise<DocumentAnalysisResult> {
+  const startTime = Date.now();
+  
+  try {
+    const openai = getOpenAIClient();
+    
+    console.log(`[DocVal] Analyzing PDF text (${text.length} chars)...`);
+    
+    // Normalize and clean the extracted text
+    const normalizedText = normalizeOCRText(text);
+    const textPrompt = buildTextPrompt(normalizedText, expectedDocType, previousData);
+    
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'user',
+          content: textPrompt
+        }
+      ],
+      max_tokens: 4096,
+      temperature: 0.1,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    
+    if (!content) {
+      throw new Error('No response from AI');
+    }
+
+    // Parse response - handle markdown code blocks
+    let cleanedContent = content.trim();
+    if (cleanedContent.startsWith('```')) {
+      cleanedContent = cleanedContent.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    }
+
+    const parsed = JSON.parse(cleanedContent);
+
+    // Clean and post-process extracted data
+    const rawData: ExtractedData = {};
+    for (const [key, value] of Object.entries(parsed.extractedData || {})) {
+      if (value && value !== 'N/A' && value !== 'No visible' && value !== 'No disponible') {
+        rawData[key] = String(value);
+      }
+    }
+    
+    const { correctedData, corrections, overallConfidence, illegibleFields } = postProcessExtractedData(rawData);
+
+    // Build enhanced reason
+    let enhancedReason = String(parsed.reason || 'Documento procesado desde PDF');
+    
+    if (corrections.length > 0) {
+      enhancedReason += ` 🔧 ${corrections.length} correcciones OCR aplicadas.`;
+    }
+
+    const aiConfidence = Math.min(1, Math.max(0, Number(parsed.confidence) || 0));
+    const combinedConfidence = Math.max(0, (aiConfidence * 0.6) + (overallConfidence * 0.4));
+
+    console.log(`[DocVal] PDF analysis complete: ${parsed.isValid ? 'VALID' : 'INVALID'} - ${parsed.detectedType}`);
+
+    return {
+      isValid: Boolean(parsed.isValid),
+      detectedType: String(parsed.detectedType || 'Desconocido'),
+      reason: enhancedReason,
+      confidence: Math.min(1, Math.max(0, combinedConfidence)),
+      extractedData: correctedData,
+      timestamp: new Date().toISOString(),
+      processingTime: Date.now() - startTime,
+      matchesExpected: Boolean(parsed.matchesExpected),
+      crossValidationWarnings: parsed.crossValidationWarnings || [],
+      ocrCorrections: corrections,
+      imageQuality: 'pdf',
+      illegibleFields,
+      ocrEngine: 'hybrid',
+      visionConfidence: 0.9 // PDFs usually have good text quality
+    };
+    
+  } catch (error) {
+    console.error('[DocVal] PDF text analysis error:', error);
+    throw error;
+  }
+}
+
+// ===========================================
 // SUPPORTED TYPES
 // ===========================================
 

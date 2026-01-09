@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { cors } from '../lib/cors.js';
 import { validateApiKey } from '../lib/auth.js';
-import { analyzeDocument } from '../lib/documentService.js';
+import { analyzeDocument, analyzeDocumentFromText } from '../lib/documentService.js';
 
 export const config = {
   api: {
@@ -55,7 +55,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const contentType = req.headers['content-type'] || '';
     
-    let dataUrl: string;
+    let dataUrl: string | null = null;
+    let pdfText: string | null = null;
     let documentType: string = 'auto';
     let fileSizeKB: number = 0;
     let originalFormat: string = 'image';
@@ -85,11 +86,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       fileSizeKB = Math.round(parsed.file.buffer.length / 1024);
       documentType = parsed.fields.documentType || 'auto';
 
-      // If PDF, convert to image
+      // If PDF, extract text instead of converting to image
       if (PDF_TYPES.includes(parsed.file.mimeType)) {
-        console.log(`[${auth.apiKeyId}] Converting PDF to image...`);
+        console.log(`[${auth.apiKeyId}] Extracting text from PDF...`);
         originalFormat = 'pdf';
-        dataUrl = await convertPdfToImage(parsed.file.buffer);
+        pdfText = await extractTextFromPdf(parsed.file.buffer);
       } else {
         const base64 = parsed.file.buffer.toString('base64');
         dataUrl = `data:${parsed.file.mimeType};base64,${base64}`;
@@ -144,11 +145,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         fileSizeKB = Math.round(buffer.length / 1024);
         documentType = (body.documentType as string) || 'auto';
 
-        // If PDF, convert to image
+        // If PDF, extract text instead of converting to image
         if (PDF_TYPES.includes(effectiveMimeType) || isPdfUrl) {
-          console.log(`[${auth.apiKeyId}] Converting PDF from URL to image...`);
+          console.log(`[${auth.apiKeyId}] Extracting text from PDF URL...`);
           originalFormat = 'pdf';
-          dataUrl = await convertPdfToImage(buffer);
+          pdfText = await extractTextFromPdf(buffer);
         } else {
           const base64 = buffer.toString('base64');
           dataUrl = `data:${mimeType};base64,${base64}`;
@@ -187,12 +188,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         fileSizeKB = Math.round(rawBase64.length / 1024);
         documentType = (body.documentType as string) || 'auto';
 
-        // If PDF, convert to image
+        // If PDF, extract text instead of converting to image
         if (PDF_TYPES.includes(mimeType)) {
-          console.log(`[${auth.apiKeyId}] Converting PDF base64 to image...`);
+          console.log(`[${auth.apiKeyId}] Extracting text from PDF base64...`);
           originalFormat = 'pdf';
           const pdfBuffer = Buffer.from(rawBase64, 'base64');
-          dataUrl = await convertPdfToImage(pdfBuffer);
+          pdfText = await extractTextFromPdf(pdfBuffer);
         } else {
           dataUrl = `data:${mimeType};base64,${rawBase64}`;
         }
@@ -217,7 +218,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`[${auth.apiKeyId}] Analyzing document - type: ${documentType}, size: ${fileSizeKB}KB, format: ${originalFormat}`);
 
-    const result = await analyzeDocument(dataUrl, documentType);
+    // Use different analysis method based on format
+    let result;
+    if (pdfText) {
+      // PDF: use text-based analysis
+      result = await analyzeDocumentFromText(pdfText, documentType);
+    } else if (dataUrl) {
+      // Image: use vision-based analysis
+      result = await analyzeDocument(dataUrl, documentType);
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'No document data to analyze',
+        code: 'MISSING_DOCUMENT_DATA'
+      });
+    }
 
     console.log(`[${auth.apiKeyId}] Result: ${result.isValid ? 'VALID' : 'INVALID'} - ${result.detectedType} (${result.processingTime}ms)`);
 
@@ -253,37 +268,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 /**
- * Convert PDF buffer to image data URL (first page only)
+ * Extract text from PDF buffer
+ * Returns extracted text for GPT processing
  */
-async function convertPdfToImage(pdfBuffer: Buffer): Promise<string> {
+async function extractTextFromPdf(pdfBuffer: Buffer): Promise<string> {
   try {
-    // Dynamic import for pdf-to-png-converter
-    const { pdfToPng } = await import('pdf-to-png-converter');
+    // Dynamic import for unpdf
+    const { extractText } = await import('unpdf');
     
-    // Convert PDF to PNG images
-    const pngPages = await pdfToPng(pdfBuffer, {
-      disableFontFace: true,  // Better for serverless
-      useSystemFonts: false,  // Don't rely on system fonts
-      viewportScale: 2.0,     // Higher quality
-      pagesToProcess: [1],    // Only first page
-    });
+    // Convert Buffer to Uint8Array
+    const uint8Array = new Uint8Array(pdfBuffer);
     
-    if (!pngPages || pngPages.length === 0) {
-      throw new Error('Could not extract any page from PDF');
+    // Extract text from PDF
+    const { text } = await extractText(uint8Array);
+    
+    if (!text || text.trim().length === 0) {
+      throw new Error('No text could be extracted from PDF');
     }
     
-    const firstPage = pngPages[0];
-    
-    if (!firstPage.content) {
-      throw new Error('PDF page has no content');
-    }
-    
-    // Convert to base64 data URL
-    const base64 = firstPage.content.toString('base64');
-    return `data:image/png;base64,${base64}`;
+    return text;
     
   } catch (error) {
-    console.error('PDF conversion error:', error);
+    console.error('PDF text extraction error:', error);
     throw new Error(`Failed to process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
