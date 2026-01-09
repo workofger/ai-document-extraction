@@ -268,25 +268,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 /**
- * Extract text from PDF buffer
+ * Extract text from PDF buffer using pdf-parse
  * Returns extracted text for GPT processing
  */
 async function extractTextFromPdf(pdfBuffer: Buffer): Promise<string> {
   try {
-    // Dynamic import for unpdf
-    const { extractText } = await import('unpdf');
-    
-    // Convert Buffer to Uint8Array
-    const uint8Array = new Uint8Array(pdfBuffer);
+    // pdf-parse is CommonJS, use require-style import
+    const pdfParse = (await import('pdf-parse')).default;
     
     // Extract text from PDF
-    const { text } = await extractText(uint8Array);
+    const data = await pdfParse(pdfBuffer);
     
-    if (!text || text.trim().length === 0) {
+    if (!data.text || data.text.trim().length === 0) {
       throw new Error('No text could be extracted from PDF');
     }
     
-    return text;
+    console.log(`[PDF] Extracted ${data.text.length} chars from ${data.numpages} pages`);
+    
+    return data.text;
     
   } catch (error) {
     console.error('PDF text extraction error:', error);
