@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
+  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DocVal API - Documentación</title>
@@ -279,8 +279,8 @@
       .endpoint { flex-direction: column; gap: 0.5rem; }
     }
   </style>
-</head>
-<body>
+  </head>
+  <body>
   <div class="container">
     <header>
       <div class="logo">PartRunner</div>
@@ -324,8 +324,17 @@
           <div class="endpoint">
             <span class="method post">POST</span>
             <div class="endpoint-info">
+              <div class="endpoint-path">/api/documents/analyze</div>
+              <div class="endpoint-desc">Analizar imagen (file upload o base64)</div>
+            </div>
+            <span class="auth-badge">API Key</span>
+          </div>
+          
+          <div class="endpoint">
+            <span class="method post">POST</span>
+            <div class="endpoint-info">
               <div class="endpoint-path">/api/documents/analyze-base64</div>
-              <div class="endpoint-desc">Analizar documento con GPT-4o Vision</div>
+              <div class="endpoint-desc">Analizar documento (solo base64)</div>
             </div>
             <span class="auth-badge">API Key</span>
           </div>
@@ -352,7 +361,43 @@
     </section>
 
     <section>
-      <h2>Analizar Documento</h2>
+      <h2>Analizar Imagen (File Upload)</h2>
+      <div class="card">
+        <p style="margin-bottom: 1rem; color: var(--text-muted);">
+          Sube directamente archivos JPG, PNG, WebP o GIF sin convertir a base64.
+        </p>
+        <div class="code-header">
+          <span class="code-label">Request (multipart/form-data)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="str">"X-API-Key: tu-api-key"</span> \
+  -F <span class="str">"file=@documento.jpg"</span> \
+  -F <span class="str">"documentType=INE"</span></code></pre>
+      </div>
+      
+      <div class="card">
+        <div class="code-header">
+          <span class="code-label">Response</span>
+        </div>
+        <pre><code>{
+  <span class="key">"success"</span>: <span class="bool">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"isValid"</span>: <span class="bool">true</span>,
+    <span class="key">"detectedType"</span>: <span class="str">"INE"</span>,
+    <span class="key">"confidence"</span>: <span class="num">0.92</span>,
+    <span class="key">"extractedData"</span>: {
+      <span class="key">"nombre"</span>: <span class="str">"Juan Pérez García"</span>,
+      <span class="key">"curp"</span>: <span class="str">"PEGJ850101HDFRRL09"</span>
+    },
+    <span class="key">"processingTime"</span>: <span class="num">2340</span>
+  }
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Analizar Documento (Base64)</h2>
       <div class="card">
         <div class="code-header">
           <span class="code-label">Request</span>
@@ -563,6 +608,6 @@
       setTimeout(() => btn.textContent = 'Copiar', 2000);
     }
   </script>
-</body>
+  </body>
 </html>
 
