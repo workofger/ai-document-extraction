@@ -10,90 +10,39 @@
     :root {
       --yellow: #FFD60A;
       --yellow-dim: #BFA008;
-      --yellow-glow: rgba(255, 214, 10, 0.3);
-      
-      --surface: rgba(18, 18, 22, 0.92);
-      --surface-light: rgba(30, 30, 36, 0.85);
-      --surface-border: rgba(255, 255, 255, 0.08);
-      
+      --surface: rgba(18, 18, 22, 0.95);
+      --surface-light: rgba(30, 30, 36, 0.9);
+      --surface-border: rgba(255, 255, 255, 0.1);
       --text-primary: #FFFFFF;
       --text-secondary: rgba(255, 255, 255, 0.75);
       --text-muted: rgba(255, 255, 255, 0.5);
+      --green: #22c55e;
+      --blue: #3b82f6;
+      --red: #ef4444;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    html {
-      scroll-behavior: smooth;
-    }
-
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Inter', -apple-system, sans-serif;
       color: var(--text-primary);
       line-height: 1.6;
       min-height: 100vh;
-      overflow-x: hidden;
+      background: linear-gradient(165deg, #0a0a0c 0%, #141419 25%, #1a1510 50%, #12100e 100%);
+      background-attachment: fixed;
     }
 
-    /* Parallax Background */
-    .parallax-bg {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: -1;
-      background: 
-        linear-gradient(
-          135deg,
-          #0a0a0c 0%,
-          #141419 20%,
-          #1a1510 40%,
-          #1f1a0d 55%,
-          #1a1612 70%,
-          #12100e 85%,
-          #0a0a0c 100%
-        );
-      background-size: 200% 200%;
-      animation: gradientShift 20s ease infinite;
-    }
-
-    .parallax-bg::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background:
-        radial-gradient(ellipse 100% 60% at 0% 0%, rgba(255, 214, 10, 0.08), transparent 50%),
-        radial-gradient(ellipse 80% 50% at 100% 100%, rgba(191, 160, 8, 0.06), transparent 50%),
-        radial-gradient(ellipse 50% 30% at 50% 50%, rgba(255, 200, 0, 0.03), transparent 40%);
-    }
-
-    @keyframes gradientShift {
-      0%, 100% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-    }
-
-    /* Main Content Container */
-    .content-wrapper {
-      position: relative;
-      z-index: 1;
-      max-width: 1000px;
+    .wrapper {
+      max-width: 900px;
       margin: 0 auto;
       padding: 1.5rem;
     }
 
-    .main-container {
+    .main-card {
       background: var(--surface);
       backdrop-filter: blur(40px);
-      -webkit-backdrop-filter: blur(40px);
       border: 1px solid var(--surface-border);
-      border-radius: 24px;
-      box-shadow: 
-        0 4px 24px rgba(0, 0, 0, 0.4),
-        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+      border-radius: 20px;
       overflow: hidden;
     }
 
@@ -102,138 +51,157 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1.25rem 2rem;
+      padding: 1rem 1.5rem;
       border-bottom: 1px solid var(--surface-border);
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0,0,0,0.2);
     }
 
-    .logo {
-      height: 28px;
-      display: block;
-    }
+    .logo { height: 26px; }
 
-    .status-badge {
+    .status {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      font-size: 0.8rem;
+      gap: 0.4rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.05);
-      padding: 0.4rem 0.75rem;
-      border-radius: 6px;
     }
 
     .status-dot {
       width: 6px;
       height: 6px;
-      background: #22c55e;
+      background: var(--green);
       border-radius: 50%;
-      box-shadow: 0 0 8px #22c55e;
+      box-shadow: 0 0 6px var(--green);
     }
 
     /* Content */
     .content {
-      padding: 3rem 2.5rem;
+      padding: 2rem;
     }
 
     /* Hero */
     .hero {
-      margin-bottom: 3rem;
+      margin-bottom: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--surface-border);
     }
 
     .hero-label {
-      display: inline-block;
       font-size: 0.7rem;
       font-weight: 700;
       color: var(--yellow);
       text-transform: uppercase;
-      letter-spacing: 0.15em;
-      margin-bottom: 1rem;
-      background: rgba(255, 214, 10, 0.1);
-      padding: 0.4rem 0.75rem;
-      border-radius: 4px;
+      letter-spacing: 0.12em;
+      margin-bottom: 0.75rem;
     }
 
     h1 {
-      font-size: clamp(2rem, 4vw, 2.75rem);
+      font-size: 1.75rem;
       font-weight: 700;
-      line-height: 1.2;
-      margin-bottom: 1rem;
-      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
     }
 
-    h1 .highlight {
+    h1 .hl { color: var(--yellow); }
+
+    .hero p {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+
+    .hero-info {
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .hero-info strong {
       color: var(--yellow);
     }
 
-    .hero-description {
-      font-size: 1.05rem;
-      color: var(--text-secondary);
-      max-width: 550px;
-      line-height: 1.7;
-      margin-bottom: 1.5rem;
+    /* Document Selector */
+    .doc-selector {
+      background: var(--surface-light);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 2rem;
     }
 
-    .hero-meta {
+    .doc-selector-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+
+    .doc-tabs {
       display: flex;
-      gap: 2rem;
+      gap: 0.5rem;
       flex-wrap: wrap;
     }
 
-    .meta-item {
-      font-size: 0.875rem;
+    .doc-tab {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid transparent;
       color: var(--text-muted);
+      padding: 0.5rem 0.875rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
     }
 
-    .meta-item strong {
-      color: var(--yellow);
+    .doc-tab:hover {
+      background: rgba(255,255,255,0.08);
+      color: var(--text-secondary);
+    }
+
+    .doc-tab.active {
+      background: var(--yellow);
+      color: #000;
       font-weight: 600;
     }
 
-    /* Stats */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1px;
-      background: var(--surface-border);
-      border-radius: 14px;
-      overflow: hidden;
-      margin-bottom: 3rem;
+    .doc-description {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--surface-border);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
     }
 
-    .stat {
-      background: var(--surface-light);
-      padding: 1.5rem;
-      text-align: center;
-    }
-
-    .stat-value {
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: var(--yellow);
-      margin-bottom: 0.25rem;
-    }
-
-    .stat-label {
-      font-size: 0.7rem;
+    .doc-fields {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
       color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+    }
+
+    .doc-fields code {
+      background: rgba(255,214,10,0.15);
+      color: var(--yellow);
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      font-size: 0.7rem;
+      margin-right: 0.25rem;
     }
 
     /* Section */
-    .section {
-      margin-bottom: 2.5rem;
+    section {
+      margin-bottom: 2rem;
     }
 
     .section-title {
       font-size: 1rem;
       font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 1.25rem;
+      margin-bottom: 1rem;
       display: flex;
       align-items: center;
-      gap: 0.6rem;
+      gap: 0.5rem;
     }
 
     .section-title::before {
@@ -244,128 +212,76 @@
       border-radius: 2px;
     }
 
-    /* Pipeline */
-    .pipeline {
+    /* Endpoint Card */
+    .endpoint {
+      background: var(--surface-light);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+
+    .endpoint-header {
       display: flex;
       align-items: center;
       gap: 0.75rem;
+      padding: 1rem 1.25rem;
+      background: rgba(0,0,0,0.2);
+      border-bottom: 1px solid var(--surface-border);
     }
 
-    .pipeline-step {
-      flex: 1;
-      background: var(--surface-light);
-      border: 1px solid var(--surface-border);
-      border-radius: 12px;
-      padding: 1.25rem;
-      text-align: center;
-    }
-
-    .pipeline-num {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 26px;
-      height: 26px;
-      background: var(--yellow);
-      color: #000;
+    .method {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
       font-weight: 700;
-      font-size: 0.75rem;
-      border-radius: 6px;
-      margin-bottom: 0.6rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
     }
 
-    .pipeline-step h4 {
+    .method.get { background: rgba(34,197,94,0.2); color: var(--green); }
+    .method.post { background: rgba(255,214,10,0.2); color: var(--yellow); }
+
+    .endpoint-path {
+      font-family: 'JetBrains Mono', monospace;
       font-size: 0.85rem;
+      color: var(--text-primary);
+    }
+
+    .endpoint-auth {
+      margin-left: auto;
+      font-size: 0.65rem;
+      padding: 0.2rem 0.4rem;
+      background: rgba(239,68,68,0.15);
+      color: var(--red);
+      border-radius: 4px;
       font-weight: 600;
-      margin-bottom: 0.2rem;
     }
 
-    .pipeline-step p {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .pipeline-arrow {
-      color: var(--text-muted);
-      font-size: 1rem;
-    }
-
-    /* Cards Grid */
-    .cards-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.75rem;
-    }
-
-    .card {
-      background: var(--surface-light);
-      border: 1px solid var(--surface-border);
-      border-radius: 12px;
+    .endpoint-body {
       padding: 1.25rem;
     }
 
-    .card-icon {
-      font-size: 1.25rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .card h4 {
-      font-size: 0.9rem;
-      font-weight: 600;
-      margin-bottom: 0.25rem;
-    }
-
-    .card p {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    /* API Block */
-    .api-block {
-      background: var(--surface-light);
-      border: 1px solid var(--surface-border);
-      border-radius: 14px;
-      padding: 1.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .api-block h3 {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--yellow);
-      margin-bottom: 0.5rem;
-    }
-
-    .api-block > p {
+    .endpoint-desc {
       color: var(--text-secondary);
       font-size: 0.875rem;
       margin-bottom: 1rem;
     }
 
-    .api-block h4 {
-      font-size: 0.7rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin: 1rem 0 0.5rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .api-block code {
-      background: rgba(255, 214, 10, 0.1);
-      color: var(--yellow);
-      padding: 0.15rem 0.4rem;
-      border-radius: 4px;
-      font-family: 'JetBrains Mono', monospace;
+    .endpoint-formats {
       font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
     }
 
-    /* Code Block */
+    .endpoint-formats strong {
+      color: var(--text-secondary);
+    }
+
+    /* Code */
     .code-block {
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0,0,0,0.4);
       border: 1px solid var(--surface-border);
-      border-radius: 10px;
+      border-radius: 8px;
       overflow: hidden;
       margin-bottom: 0.75rem;
     }
@@ -373,20 +289,21 @@
     .code-header {
       display: flex;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.3rem;
       padding: 0.5rem 0.75rem;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0,0,0,0.3);
       border-bottom: 1px solid var(--surface-border);
     }
 
     .code-dot {
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
     }
-    .code-dot.red { background: #ff5f57; }
-    .code-dot.yellow { background: #febc2e; }
-    .code-dot.green { background: #28c840; }
+
+    .code-dot.r { background: #ff5f57; }
+    .code-dot.y { background: #febc2e; }
+    .code-dot.g { background: #28c840; }
 
     .code-title {
       margin-left: auto;
@@ -396,11 +313,11 @@
     }
 
     pre {
-      padding: 1rem;
+      padding: 0.875rem;
       overflow-x: auto;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.78rem;
-      line-height: 1.7;
+      font-size: 0.75rem;
+      line-height: 1.6;
       color: var(--text-secondary);
     }
 
@@ -409,356 +326,230 @@
     .cn { color: #ffd3a5; }
     .cb { color: #c9b1ff; }
 
-    /* Response Tabs */
-    .response-tabs {
+    /* Request Options */
+    .request-options {
       display: flex;
       gap: 0.5rem;
-      margin-bottom: 1rem;
-      flex-wrap: wrap;
+      margin-bottom: 0.75rem;
     }
 
-    .tab-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--surface-border);
+    .req-opt {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid transparent;
       color: var(--text-muted);
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      font-size: 0.8rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.7rem;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
     }
 
-    .tab-btn:hover {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text-secondary);
+    .req-opt:hover {
+      background: rgba(255,255,255,0.08);
     }
 
-    .tab-btn.active {
-      background: var(--yellow);
-      color: #000;
-      border-color: var(--yellow);
+    .req-opt.active {
+      background: rgba(59,130,246,0.2);
+      color: var(--blue);
+      border-color: rgba(59,130,246,0.3);
     }
 
-    .response-content {
+    .request-content, .response-content {
       display: none;
     }
 
-    .response-content.active {
+    .request-content.active, .response-content.active {
       display: block;
     }
 
-    /* Endpoints */
-    .endpoints-list {
+    /* Info boxes */
+    .info-box {
+      background: rgba(255,214,10,0.08);
+      border: 1px solid rgba(255,214,10,0.2);
+      border-radius: 8px;
+      padding: 0.875rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 1rem;
+    }
+
+    .info-box code {
+      background: rgba(0,0,0,0.3);
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      font-size: 0.7rem;
+    }
+
+    /* Endpoints List */
+    .endpoints-mini {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
     }
 
-    .endpoint-row {
+    .endpoint-mini {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.6rem;
       padding: 0.6rem 0.75rem;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0,0,0,0.2);
       border-radius: 8px;
     }
 
-    .method {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.6rem;
-      font-weight: 700;
-      padding: 0.2rem 0.35rem;
-      border-radius: 4px;
-      min-width: 36px;
-      text-align: center;
-    }
-    .method.get { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
-    .method.post { background: rgba(255, 214, 10, 0.2); color: var(--yellow); }
-
-    .endpoint-row code {
-      background: transparent;
+    .endpoint-mini code {
+      font-size: 0.75rem;
       color: var(--text-primary);
-      font-size: 0.8rem;
     }
 
-    .endpoint-row .desc {
+    .endpoint-mini .desc {
       color: var(--text-muted);
       font-size: 0.75rem;
       margin-left: auto;
     }
 
-    /* Fields */
-    .fields-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.5rem;
-    }
-
-    .field-item {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      padding: 0.6rem 0.75rem;
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 8px;
-    }
-
-    .field-item code {
-      background: transparent;
-      min-width: 110px;
-    }
-
-    .field-item span {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-    }
-
-    /* Notes */
-    .notes-list {
-      list-style: none;
-      padding: 0;
-    }
-
-    .notes-list li {
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      padding: 0.4rem 0;
-      padding-left: 1.25rem;
-      position: relative;
-      line-height: 1.6;
-    }
-
-    .notes-list li::before {
-      content: '→';
-      position: absolute;
-      left: 0;
-      color: var(--yellow);
-    }
-
-    .notes-list code {
-      font-size: 0.75rem;
-    }
-
     /* Footer */
     .footer {
-      padding: 1.5rem 2rem;
+      padding: 1rem 1.5rem;
       border-top: 1px solid var(--surface-border);
       text-align: center;
+      font-size: 0.75rem;
       color: var(--text-muted);
-      font-size: 0.8rem;
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0,0,0,0.2);
     }
 
     /* Responsive */
-    @media (max-width: 768px) {
-      .content { padding: 2rem 1.5rem; }
-      .cards-grid { grid-template-columns: repeat(2, 1fr); }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .pipeline { flex-direction: column; }
-      .pipeline-arrow { transform: rotate(90deg); }
-      .fields-grid { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 500px) {
-      .content-wrapper { padding: 0.75rem; }
-      .cards-grid, .stats-grid { grid-template-columns: 1fr; }
-      .hero-meta { flex-direction: column; gap: 0.5rem; }
-      .endpoint-row { flex-wrap: wrap; }
-      .endpoint-row .desc { margin-left: 0; width: 100%; }
+    @media (max-width: 600px) {
+      .wrapper { padding: 0.75rem; }
+      .content { padding: 1.25rem; }
+      .hero-info { flex-direction: column; gap: 0.5rem; }
+      .doc-tabs { gap: 0.35rem; }
+      .doc-tab { padding: 0.4rem 0.6rem; font-size: 0.7rem; }
     }
   </style>
   </head>
   <body>
-  <!-- Parallax Background -->
-  <div class="parallax-bg"></div>
-
-  <div class="content-wrapper">
-    <div class="main-container">
+  <div class="wrapper">
+    <div class="main-card">
       <!-- Header -->
       <header class="header">
-        <img src="/assets/FULL, BICOLOR@2x.png" alt="PartRunner" class="logo" onerror="this.outerHTML='<span style=\'font-weight:700;font-size:1rem;color:var(--yellow)\'>PARTRUNNER</span>'">
-        <div class="status-badge">
+        <img src="/assets/FULL, BICOLOR@2x.png" alt="PartRunner" class="logo" onerror="this.outerHTML='<span style=\"font-weight:700;color:var(--yellow)\">PARTRUNNER</span>'">
+        <div class="status">
           <span class="status-dot"></span>
           API Online
         </div>
       </header>
 
-      <!-- Content -->
       <div class="content">
         <!-- Hero -->
         <div class="hero">
-          <span class="hero-label">Internal Documentation</span>
-          <h1>DocVal <span class="highlight">API</span><br>Document Validation Service</h1>
-          <p class="hero-description">
-            Internal service for Mexican document extraction and validation. 
-            Hybrid pipeline: Google Vision OCR + GPT-4o. 
-            Integrates with n8n, Supabase, or any backend.
-          </p>
-          <div class="hero-meta">
-            <div class="meta-item">Base URL: <strong>ai-document-extraction.vercel.app</strong></div>
-            <div class="meta-item">Auth: <strong>X-API-Key header</strong></div>
+          <div class="hero-label">Internal API Documentation</div>
+          <h1>DocVal <span class="hl">API</span></h1>
+          <p>Mexican document extraction & validation service. Hybrid OCR pipeline: Google Vision + GPT-4o + checksum validation.</p>
+          <div class="hero-info">
+            <span>Base URL: <strong>ai-document-extraction.vercel.app</strong></span>
+            <span>Auth: <strong>X-API-Key header</strong></span>
           </div>
         </div>
 
-        <!-- Stats -->
-        <div class="stats-grid">
-          <div class="stat">
-            <div class="stat-value">~97%</div>
-            <div class="stat-label">OCR Accuracy</div>
+        <!-- Document Type Selector -->
+        <div class="doc-selector">
+          <div class="doc-selector-label">Select document type to see relevant examples</div>
+          <div class="doc-tabs">
+            <button class="doc-tab active" onclick="selectDoc('ine')">INE / IFE</button>
+            <button class="doc-tab" onclick="selectDoc('licencia')">Driver's License</button>
+            <button class="doc-tab" onclick="selectDoc('rfc')">RFC Certificate</button>
+            <button class="doc-tab" onclick="selectDoc('circulacion')">Vehicle Reg.</button>
+            <button class="doc-tab" onclick="selectDoc('poliza')">Insurance</button>
+            <button class="doc-tab" onclick="selectDoc('banco')">Bank Statement</button>
           </div>
-          <div class="stat">
-            <div class="stat-value">&lt;2s</div>
-            <div class="stat-label">Response</div>
-          </div>
-          <div class="stat">
-            <div class="stat-value">6</div>
-            <div class="stat-label">Doc Types</div>
-          </div>
-          <div class="stat">
-            <div class="stat-value">5</div>
-            <div class="stat-label">Validators</div>
-          </div>
-        </div>
-
-        <!-- Pipeline -->
-        <div class="section">
-          <h2 class="section-title">Processing Pipeline</h2>
-          <div class="pipeline">
-            <div class="pipeline-step">
-              <div class="pipeline-num">1</div>
-              <h4>Google Vision</h4>
-              <p>Text extraction</p>
-            </div>
-            <span class="pipeline-arrow">→</span>
-            <div class="pipeline-step">
-              <div class="pipeline-num">2</div>
-              <h4>GPT-4o</h4>
-              <p>Interpretation</p>
-            </div>
-            <span class="pipeline-arrow">→</span>
-            <div class="pipeline-step">
-              <div class="pipeline-num">3</div>
-              <h4>Checksum</h4>
-              <p>Validation</p>
+          <div class="doc-description">
+            <span id="doc-desc">Mexican voter ID card with photo, personal data, and unique identifiers.</span>
+            <div class="doc-fields">
+              <strong>Extracted fields:</strong> <span id="doc-fields-list"><code>nombre</code><code>curp</code><code>claveElector</code><code>direccion</code><code>codigoPostal</code><code>vigencia</code><code>folio</code></span>
             </div>
           </div>
         </div>
 
-        <!-- Documents -->
-        <div class="section">
-          <h2 class="section-title">Supported Documents</h2>
-          <div class="cards-grid">
-            <div class="card">
-              <div class="card-icon">🪪</div>
-              <h4>INE / IFE</h4>
-              <p>CURP, name, voter key, address</p>
-            </div>
-            <div class="card">
-              <div class="card-icon">🚗</div>
-              <h4>Driver's License</h4>
-              <p>Number, type, validity</p>
-            </div>
-            <div class="card">
-              <div class="card-icon">📋</div>
-              <h4>RFC Certificate</h4>
-              <p>RFC, business name, address</p>
-            </div>
-            <div class="card">
-              <div class="card-icon">🚙</div>
-              <h4>Vehicle Registration</h4>
-              <p>Plates, VIN, model</p>
-            </div>
-            <div class="card">
-              <div class="card-icon">🛡️</div>
-              <h4>Insurance Policy</h4>
-              <p>Insurer, policy #, validity</p>
-            </div>
-            <div class="card">
-              <div class="card-icon">🏦</div>
-              <h4>Bank Statement</h4>
-              <p>CLABE, bank, account holder</p>
-            </div>
-          </div>
-        </div>
+        <!-- ENDPOINTS -->
+        <section>
+          <h2 class="section-title">API Endpoints</h2>
 
-        <!-- API Reference -->
-        <div class="section">
-          <h2 class="section-title">API Reference</h2>
+          <!-- POST /api/documents/analyze -->
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-path">/api/documents/analyze</span>
+              <span class="endpoint-auth">🔐 Auth Required</span>
+            </div>
+            <div class="endpoint-body">
+              <p class="endpoint-desc">
+                <strong>Main endpoint.</strong> Analyze document images and extract structured data.
+              </p>
+              <p class="endpoint-formats">
+                <strong>Accepts:</strong> Image URL, file upload (multipart), or base64<br>
+                <strong>Formats:</strong> JPEG, PNG, WebP, GIF (no PDF)
+              </p>
 
-          <!-- Auth -->
-          <div class="api-block">
-            <h3>🔐 Authentication</h3>
-            <p>All endpoints require the <code>X-API-Key</code> header (except /api/health).</p>
-            <div class="code-block">
-              <div class="code-header">
-                <span class="code-dot red"></span>
-                <span class="code-dot yellow"></span>
-                <span class="code-dot green"></span>
-                <span class="code-title">headers</span>
+              <div class="request-options">
+                <button class="req-opt active" onclick="selectReqType('url')">URL</button>
+                <button class="req-opt" onclick="selectReqType('file')">File Upload</button>
+                <button class="req-opt" onclick="selectReqType('base64')">Base64</button>
               </div>
-              <pre><span class="ck">X-API-Key</span>: tu-api-key</pre>
-            </div>
-          </div>
 
-          <!-- Analyze -->
-          <div class="api-block">
-            <h3>📄 POST /api/documents/analyze</h3>
-            <p>Main endpoint. Accepts URL, file upload, or base64.<br>
-            <strong>Formats:</strong> JPEG, PNG, WebP, GIF only.</p>
-            
-            <h4>Image URL</h4>
-            <div class="code-block">
-              <div class="code-header">
-                <span class="code-dot red"></span>
-                <span class="code-dot yellow"></span>
-                <span class="code-dot green"></span>
-                <span class="code-title">curl</span>
-              </div>
-              <pre>curl -X POST .../api/documents/analyze \
+              <!-- URL Request -->
+              <div id="req-url" class="request-content active">
+                <div class="code-block">
+                  <div class="code-header">
+                    <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                    <span class="code-title">curl</span>
+                  </div>
+                  <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
   -H <span class="cs">"Content-Type: application/json"</span> \
-  -H <span class="cs">"X-API-Key: tu-api-key"</span> \
-  -d <span class="cs">'{"url": "https://storage.com/ine.jpg"}'</span></pre>
-            </div>
-
-            <h4>File Upload</h4>
-            <div class="code-block">
-              <div class="code-header">
-                <span class="code-dot red"></span>
-                <span class="code-dot yellow"></span>
-                <span class="code-dot green"></span>
-                <span class="code-title">curl</span>
+  -H <span class="cs">"X-API-Key: YOUR_API_KEY"</span> \
+  -d <span class="cs">'{"url": "https://storage.example.com/<span id="url-example">ine</span>.jpg"}'</span></pre>
+                </div>
               </div>
-              <pre>curl -X POST .../api/documents/analyze \
-  -H <span class="cs">"X-API-Key: tu-api-key"</span> \
-  -F <span class="cs">"file=@documento.jpg"</span></pre>
-            </div>
 
-            <h4>Response by Document Type</h4>
-            <div class="response-tabs">
-              <button class="tab-btn active" onclick="showResponse('ine')">INE</button>
-              <button class="tab-btn" onclick="showResponse('licencia')">License</button>
-              <button class="tab-btn" onclick="showResponse('rfc')">RFC</button>
-              <button class="tab-btn" onclick="showResponse('circulacion')">Vehicle</button>
-              <button class="tab-btn" onclick="showResponse('poliza')">Insurance</button>
-              <button class="tab-btn" onclick="showResponse('banco')">Bank</button>
-            </div>
-            
-            <div id="response-ine" class="response-content active">
+              <!-- File Upload Request -->
+              <div id="req-file" class="request-content">
+                <div class="code-block">
+                  <div class="code-header">
+                    <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                    <span class="code-title">curl</span>
+                  </div>
+                  <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="cs">"X-API-Key: YOUR_API_KEY"</span> \
+  -F <span class="cs">"file=@<span id="file-example">ine</span>.jpg"</span></pre>
+                </div>
+              </div>
+
+              <!-- Base64 Request -->
+              <div id="req-base64" class="request-content">
+                <div class="code-block">
+                  <div class="code-header">
+                    <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                    <span class="code-title">curl</span>
+                  </div>
+                  <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="cs">"Content-Type: application/json"</span> \
+  -H <span class="cs">"X-API-Key: YOUR_API_KEY"</span> \
+  -d <span class="cs">'{"base64": "data:image/jpeg;base64,/9j/4AAQ..."}'</span></pre>
+                </div>
+              </div>
+
+              <!-- Response -->
               <div class="code-block">
                 <div class="code-header">
-                  <span class="code-dot red"></span>
-                  <span class="code-dot yellow"></span>
-                  <span class="code-dot green"></span>
-                  <span class="code-title">INE / IFE Response</span>
+                  <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                  <span class="code-title">Response</span>
                 </div>
-                <pre>{
+                <pre id="analyze-response">{
   <span class="ck">"success"</span>: <span class="cb">true</span>,
   <span class="ck">"data"</span>: {
     <span class="ck">"isValid"</span>: <span class="cb">true</span>,
     <span class="ck">"detectedType"</span>: <span class="cs">"INE"</span>,
     <span class="ck">"matchesExpected"</span>: <span class="cb">true</span>,
-    <span class="ck">"reason"</span>: <span class="cs">"Valid document. 2 OCR corrections applied."</span>,
+    <span class="ck">"reason"</span>: <span class="cs">"Valid document. 1 OCR correction applied."</span>,
     <span class="ck">"confidence"</span>: <span class="cn">0.94</span>,
     <span class="ck">"extractedData"</span>: {
       <span class="ck">"nombre"</span>: <span class="cs">"Juan Pérez García"</span>,
@@ -774,22 +565,166 @@
     <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
     <span class="ck">"ocrCorrections"</span>: [<span class="cs">"Position 4: O → 0"</span>],
     <span class="ck">"illegibleFields"</span>: [],
-    <span class="ck">"timestamp"</span>: <span class="cs">"2026-01-08T20:30:00.000Z"</span>,
     <span class="ck">"processingTime"</span>: <span class="cn">1850</span>
   }
 }</pre>
               </div>
             </div>
+          </div>
 
-            <div id="response-licencia" class="response-content">
+          <!-- POST /api/documents/validate-field -->
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-path">/api/documents/validate-field</span>
+              <span class="endpoint-auth">🔐 Auth Required</span>
+            </div>
+            <div class="endpoint-body">
+              <p class="endpoint-desc">
+                <strong>Validate & auto-correct</strong> individual fields with checksum verification.
+              </p>
+              <p class="endpoint-formats">
+                <strong>Supported fields:</strong> <code>curp</code> <code>rfc</code> <code>clabe</code> <code>vin</code> <code>placas</code>
+              </p>
+
               <div class="code-block">
                 <div class="code-header">
-                  <span class="code-dot red"></span>
-                  <span class="code-dot yellow"></span>
-                  <span class="code-dot green"></span>
-                  <span class="code-title">Driver's License Response</span>
+                  <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                  <span class="code-title">curl</span>
+                </div>
+                <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/validate-field \
+  -H <span class="cs">"Content-Type: application/json"</span> \
+  -H <span class="cs">"X-API-Key: YOUR_API_KEY"</span> \
+  -d <span class="cs">'{"field": "<span id="validate-field">curp</span>", "value": "<span id="validate-value">PEGJ85O1O1HDFRRL09</span>"}'</span></pre>
+              </div>
+
+              <div class="code-block">
+                <div class="code-header">
+                  <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                  <span class="code-title">Response</span>
+                </div>
+                <pre id="validate-response">{
+  <span class="ck">"success"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"field"</span>: <span class="cs">"curp"</span>,
+    <span class="ck">"originalValue"</span>: <span class="cs">"PEGJ85O1O1HDFRRL09"</span>,
+    <span class="ck">"valid"</span>: <span class="cb">true</span>,
+    <span class="ck">"corrected"</span>: <span class="cs">"PEGJ850101HDFRRL09"</span>,
+    <span class="ck">"confidence"</span>: <span class="cn">0.95</span>,
+    <span class="ck">"corrections"</span>: [
+      <span class="cs">"Position 4: O → 0"</span>,
+      <span class="cs">"Position 6: O → 0"</span>
+    ]
+  }
+}</pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Other Endpoints -->
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-path">/api/health</span>
+            </div>
+            <div class="endpoint-body">
+              <p class="endpoint-desc">Health check. <strong>No authentication required.</strong></p>
+              <div class="code-block">
+                <div class="code-header">
+                  <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                  <span class="code-title">Response</span>
                 </div>
                 <pre>{
+  <span class="ck">"status"</span>: <span class="cs">"ok"</span>,
+  <span class="ck">"timestamp"</span>: <span class="cs">"2026-01-08T20:30:00.000Z"</span>,
+  <span class="ck">"version"</span>: <span class="cs">"1.0.0"</span>
+}</pre>
+              </div>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method get">GET</span>
+              <span class="endpoint-path">/api/documents/supported-types</span>
+              <span class="endpoint-auth">🔐 Auth Required</span>
+            </div>
+            <div class="endpoint-body">
+              <p class="endpoint-desc">Returns list of supported document types and extractable fields.</p>
+            </div>
+          </div>
+
+          <div class="endpoint">
+            <div class="endpoint-header">
+              <span class="method post">POST</span>
+              <span class="endpoint-path">/api/documents/analyze-base64</span>
+              <span class="endpoint-auth">🔐 Auth Required</span>
+            </div>
+            <div class="endpoint-body">
+              <p class="endpoint-desc">Legacy endpoint. Base64 only. Use <code>/api/documents/analyze</code> instead.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Notes -->
+        <section>
+          <h2 class="section-title">Important Notes</h2>
+          <div class="info-box">
+            <strong>⚠️ Data Integrity:</strong> The API never invents data. Illegible characters are marked with <code>*</code> and completely unreadable fields with <code>***</code>.<br><br>
+            <strong>📋 Rejection:</strong> Documents with 3+ illegible fields or poor image quality are rejected (<code>isValid: false</code>).<br><br>
+            <strong>🔧 Auto-correction:</strong> Common OCR errors (O→0, I→1) are automatically corrected and logged in <code>ocrCorrections</code>.<br><br>
+            <strong>📷 Formats:</strong> JPEG, PNG, WebP, GIF only. No PDF support.
+          </div>
+        </section>
+      </div>
+
+      <footer class="footer">
+        PartRunner Engineering · Internal Use Only
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    const docData = {
+      ine: {
+        desc: "Mexican voter ID card with photo, personal data, and unique identifiers.",
+        fields: ["nombre", "curp", "claveElector", "direccion", "codigoPostal", "vigencia", "folio"],
+        filename: "ine",
+        validateField: "curp",
+        validateValue: "PEGJ85O1O1HDFRRL09",
+        response: `{
+  <span class="ck">"success"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"isValid"</span>: <span class="cb">true</span>,
+    <span class="ck">"detectedType"</span>: <span class="cs">"INE"</span>,
+    <span class="ck">"matchesExpected"</span>: <span class="cb">true</span>,
+    <span class="ck">"reason"</span>: <span class="cs">"Valid document. 1 OCR correction applied."</span>,
+    <span class="ck">"confidence"</span>: <span class="cn">0.94</span>,
+    <span class="ck">"extractedData"</span>: {
+      <span class="ck">"nombre"</span>: <span class="cs">"Juan Pérez García"</span>,
+      <span class="ck">"curp"</span>: <span class="cs">"PEGJ850101HDFRRL09"</span>,
+      <span class="ck">"claveElector"</span>: <span class="cs">"PRGRJN85010109H800"</span>,
+      <span class="ck">"direccion"</span>: <span class="cs">"Calle Reforma 123, Col Centro"</span>,
+      <span class="ck">"codigoPostal"</span>: <span class="cs">"06600"</span>,
+      <span class="ck">"vigencia"</span>: <span class="cs">"2029"</span>,
+      <span class="ck">"folio"</span>: <span class="cs">"1234567890123"</span>
+    },
+    <span class="ck">"ocrEngine"</span>: <span class="cs">"hybrid"</span>,
+    <span class="ck">"visionConfidence"</span>: <span class="cn">0.97</span>,
+    <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
+    <span class="ck">"ocrCorrections"</span>: [<span class="cs">"Position 4: O → 0"</span>],
+    <span class="ck">"illegibleFields"</span>: [],
+    <span class="ck">"processingTime"</span>: <span class="cn">1850</span>
+  }
+}`
+      },
+      licencia: {
+        desc: "Mexican driver's license with personal data, license number, and validity dates.",
+        fields: ["nombre", "curp", "numeroLicencia", "tipoLicencia", "vigencia", "vigenciaFin", "direccion", "codigoPostal"],
+        filename: "licencia",
+        validateField: "curp",
+        validateValue: "LOHM90O515MDFRPR01",
+        response: `{
   <span class="ck">"success"</span>: <span class="cb">true</span>,
   <span class="ck">"data"</span>: {
     <span class="ck">"isValid"</span>: <span class="cb">true</span>,
@@ -809,19 +744,15 @@
     <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
     <span class="ck">"processingTime"</span>: <span class="cn">1720</span>
   }
-}</pre>
-              </div>
-            </div>
-
-            <div id="response-rfc" class="response-content">
-              <div class="code-block">
-                <div class="code-header">
-                  <span class="code-dot red"></span>
-                  <span class="code-dot yellow"></span>
-                  <span class="code-dot green"></span>
-                  <span class="code-title">RFC Certificate Response</span>
-                </div>
-                <pre>{
+}`
+      },
+      rfc: {
+        desc: "Tax ID certificate (Constancia de Situación Fiscal) from SAT with RFC and fiscal data.",
+        fields: ["nombre", "rfc", "curp", "razonSocial", "direccion", "codigoPostal", "email", "telefono"],
+        filename: "constancia_rfc",
+        validateField: "rfc",
+        validateValue: "PEGJ85O1O1ABC",
+        response: `{
   <span class="ck">"success"</span>: <span class="cb">true</span>,
   <span class="ck">"data"</span>: {
     <span class="ck">"isValid"</span>: <span class="cb">true</span>,
@@ -841,19 +772,15 @@
     <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
     <span class="ck">"processingTime"</span>: <span class="cn">1650</span>
   }
-}</pre>
-              </div>
-            </div>
-
-            <div id="response-circulacion" class="response-content">
-              <div class="code-block">
-                <div class="code-header">
-                  <span class="code-dot red"></span>
-                  <span class="code-dot yellow"></span>
-                  <span class="code-dot green"></span>
-                  <span class="code-title">Vehicle Registration Response</span>
-                </div>
-                <pre>{
+}`
+      },
+      circulacion: {
+        desc: "Vehicle registration card with plate number, VIN, and vehicle details.",
+        fields: ["nombre", "placas", "vin", "marca", "modelo", "anio", "vigencia", "folio"],
+        filename: "tarjeta_circulacion",
+        validateField: "vin",
+        validateValue: "1HGBH41JXMNI09186",
+        response: `{
   <span class="ck">"success"</span>: <span class="cb">true</span>,
   <span class="ck">"data"</span>: {
     <span class="ck">"isValid"</span>: <span class="cb">true</span>,
@@ -873,19 +800,15 @@
     <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
     <span class="ck">"processingTime"</span>: <span class="cn">1890</span>
   }
-}</pre>
-              </div>
-            </div>
-
-            <div id="response-poliza" class="response-content">
-              <div class="code-block">
-                <div class="code-header">
-                  <span class="code-dot red"></span>
-                  <span class="code-dot yellow"></span>
-                  <span class="code-dot green"></span>
-                  <span class="code-title">Insurance Policy Response</span>
-                </div>
-                <pre>{
+}`
+      },
+      poliza: {
+        desc: "Vehicle insurance policy with policy number, coverage dates, and vehicle info.",
+        fields: ["nombre", "aseguradora", "poliza", "placas", "vin", "marca", "modelo", "vigencia", "vigenciaFin"],
+        filename: "poliza_seguro",
+        validateField: "vin",
+        validateValue: "1HGBH41JXMNI09186",
+        response: `{
   <span class="ck">"success"</span>: <span class="cb">true</span>,
   <span class="ck">"data"</span>: {
     <span class="ck">"isValid"</span>: <span class="cb">true</span>,
@@ -906,19 +829,15 @@
     <span class="ck">"imageQuality"</span>: <span class="cs">"regular"</span>,
     <span class="ck">"processingTime"</span>: <span class="cn">2100</span>
   }
-}</pre>
-              </div>
-            </div>
-
-            <div id="response-banco" class="response-content">
-              <div class="code-block">
-                <div class="code-header">
-                  <span class="code-dot red"></span>
-                  <span class="code-dot yellow"></span>
-                  <span class="code-dot green"></span>
-                  <span class="code-title">Bank Statement Response</span>
-                </div>
-                <pre>{
+}`
+      },
+      banco: {
+        desc: "Bank statement or account cover page with CLABE, account number, and holder info.",
+        fields: ["nombre", "banco", "clabe", "numeroCuenta", "rfc", "direccion"],
+        filename: "estado_cuenta",
+        validateField: "clabe",
+        validateValue: "O1218OOO1234567890",
+        response: `{
   <span class="ck">"success"</span>: <span class="cb">true</span>,
   <span class="ck">"data"</span>: {
     <span class="ck">"isValid"</span>: <span class="cb">true</span>,
@@ -936,117 +855,39 @@
     <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
     <span class="ck">"processingTime"</span>: <span class="cn">1780</span>
   }
-}</pre>
-              </div>
-            </div>
-          </div>
+}`
+      }
+    };
 
-          <!-- Validate -->
-          <div class="api-block">
-            <h3>✅ POST /api/documents/validate-field</h3>
-            <p>Validates and auto-corrects CURP, RFC, CLABE, VIN, or Plates.</p>
-            <div class="code-block">
-              <div class="code-header">
-                <span class="code-dot red"></span>
-                <span class="code-dot yellow"></span>
-                <span class="code-dot green"></span>
-                <span class="code-title">curl</span>
-              </div>
-              <pre>curl -X POST .../api/documents/validate-field \
-  -H <span class="cs">"Content-Type: application/json"</span> \
-  -H <span class="cs">"X-API-Key: tu-api-key"</span> \
-  -d <span class="cs">'{"field": "curp", "value": "PEGJ85O1O1HDFRRL09"}'</span></pre>
-            </div>
-          </div>
-
-          <!-- Other Endpoints -->
-          <div class="api-block">
-            <h3>📋 Other Endpoints</h3>
-            <div class="endpoints-list">
-              <div class="endpoint-row">
-                <span class="method get">GET</span>
-                <code>/api/health</code>
-                <span class="desc">Health check (no auth)</span>
-              </div>
-              <div class="endpoint-row">
-                <span class="method get">GET</span>
-                <code>/api/documents/supported-types</code>
-                <span class="desc">List document types</span>
-              </div>
-              <div class="endpoint-row">
-                <span class="method post">POST</span>
-                <code>/api/documents/analyze-base64</code>
-                <span class="desc">Legacy (base64 only, same formats)</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Fields -->
-          <div class="api-block">
-            <h3>📊 Response Fields</h3>
-            <div class="fields-grid">
-              <div class="field-item">
-                <code>isValid</code>
-                <span>Document valid</span>
-              </div>
-              <div class="field-item">
-                <code>detectedType</code>
-                <span>INE, RFC, etc.</span>
-              </div>
-              <div class="field-item">
-                <code>confidence</code>
-                <span>0.0 - 1.0</span>
-              </div>
-              <div class="field-item">
-                <code>extractedData</code>
-                <span>Extracted fields</span>
-              </div>
-              <div class="field-item">
-                <code>ocrEngine</code>
-                <span>hybrid | gpt-4o</span>
-              </div>
-              <div class="field-item">
-                <code>imageQuality</code>
-                <span>buena, regular, mala</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Notes -->
-          <div class="api-block">
-            <h3>⚠️ Notes</h3>
-            <ul class="notes-list">
-              <li><strong>Supported formats:</strong> JPEG, PNG, WebP, GIF only (no PDF)</li>
-              <li>Illegible fields are marked with <code>***</code></li>
-              <li>Documents with 3+ illegible fields: <code>isValid: false</code></li>
-              <li>OCR corrections logged in <code>ocrCorrections</code></li>
-              <li><code>documentType</code> is optional (auto-detects)</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <footer class="footer">
-        PartRunner Engineering · Internal Use Only
-      </footer>
-    </div>
-</div>
-
-  <script>
-    function showResponse(type) {
-      // Hide all response contents
-      document.querySelectorAll('.response-content').forEach(el => {
-        el.classList.remove('active');
-      });
-      // Remove active from all tabs
-      document.querySelectorAll('.tab-btn').forEach(el => {
-        el.classList.remove('active');
-      });
-      // Show selected response
-      document.getElementById('response-' + type).classList.add('active');
-      // Mark tab as active
+    function selectDoc(type) {
+      // Update tabs
+      document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'));
       event.target.classList.add('active');
+
+      const data = docData[type];
+
+      // Update description
+      document.getElementById('doc-desc').textContent = data.desc;
+
+      // Update fields
+      document.getElementById('doc-fields-list').innerHTML = data.fields.map(f => `<code>${f}</code>`).join('');
+
+      // Update examples
+      document.getElementById('url-example').textContent = data.filename;
+      document.getElementById('file-example').textContent = data.filename;
+      document.getElementById('validate-field').textContent = data.validateField;
+      document.getElementById('validate-value').textContent = data.validateValue;
+
+      // Update response
+      document.getElementById('analyze-response').innerHTML = data.response;
+    }
+
+    function selectReqType(type) {
+      document.querySelectorAll('.req-opt').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+
+      document.querySelectorAll('.request-content').forEach(c => c.classList.remove('active'));
+      document.getElementById('req-' + type).classList.add('active');
     }
   </script>
   </body>
