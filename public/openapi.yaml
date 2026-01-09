@@ -516,6 +516,17 @@ components:
             type: string
           description: Fields that could not be read
           example: []
+        crossValidationWarnings:
+          type: array
+          items:
+            type: string
+          description: Warnings from cross-validation checks
+          example: []
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of when the analysis was performed
+          example: "2026-01-09T02:00:00.000Z"
         processingTime:
           type: integer
           description: Processing time in milliseconds
