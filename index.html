@@ -444,59 +444,115 @@
   -H <span class="str">"X-API-Key: tu-api-key"</span> \
   -F <span class="str">"file=@documento.jpg"</span></code></pre>
       </div>
-      
-      <div class="card">
-        <div class="code-header">
-          <span class="code-label">Response</span>
-        </div>
-        <pre><code>{
-  <span class="key">"success"</span>: <span class="bool">true</span>,
-  <span class="key">"data"</span>: {
-    <span class="key">"isValid"</span>: <span class="bool">true</span>,
-    <span class="key">"detectedType"</span>: <span class="str">"INE"</span>,
-    <span class="key">"confidence"</span>: <span class="num">0.92</span>,
-    <span class="key">"extractedData"</span>: {
-      <span class="key">"nombre"</span>: <span class="str">"Juan Pérez García"</span>,
-      <span class="key">"curp"</span>: <span class="str">"PEGJ850101HDFRRL09"</span>
-    },
-    <span class="key">"processingTime"</span>: <span class="num">2340</span>
-  }
-}</code></pre>
-      </div>
     </section>
 
     <section>
-      <h2>Analizar Documento (Base64)</h2>
+      <h2>Analizar con Base64</h2>
+      <div class="card">
+        <p style="margin-bottom: 1rem; color: var(--text-muted);">
+          Puedes usar <code>/api/documents/analyze</code> con base64 o el endpoint legacy <code>/api/documents/analyze-base64</code>.
+        </p>
+        <div class="code-header">
+          <span class="code-label">Request (Endpoint unificado)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -H <span class="str">"X-API-Key: tu-api-key"</span> \
+  -d <span class="str">'{"base64": "data:image/jpeg;base64,/9j/4AAQ..."}'</span></code></pre>
+      </div>
+      
       <div class="card">
         <div class="code-header">
-          <span class="code-label">Request</span>
+          <span class="code-label">Request (Endpoint legacy)</span>
           <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
         </div>
         <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze-base64 \
   -H <span class="str">"Content-Type: application/json"</span> \
   -H <span class="str">"X-API-Key: tu-api-key"</span> \
   -d <span class="str">'{
-    "document": "data:image/jpeg;base64,/9j/4AAQ...",
-    "documentType": "INE"
+    "document": "data:image/jpeg;base64,/9j/4AAQ..."
   }'</span></code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>⚠️ Manejo de Datos Ilegibles</h2>
+      <div class="card">
+        <p style="margin-bottom: 1rem; color: var(--text-muted);">
+          La API <strong>nunca inventa datos</strong>. Si un campo no se puede leer claramente:
+        </p>
+        <table>
+          <tbody>
+            <tr>
+              <td><code>*</code></td>
+              <td>Carácter individual ilegible</td>
+              <td><code>PEGJ85*1*1HDFRRL09</code></td>
+            </tr>
+            <tr>
+              <td><code>***</code></td>
+              <td>Campo completamente ilegible</td>
+              <td><code>"curp": "***"</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="margin-top: 1rem; color: var(--red); font-size: 0.9rem;">
+          🚫 Documentos con 3+ campos ilegibles o mala calidad se rechazan con <code>isValid: false</code>
+        </p>
       </div>
       
       <div class="card">
         <div class="code-header">
-          <span class="code-label">Response</span>
+          <span class="code-label">Ejemplo: Documento con campos ilegibles</span>
+        </div>
+        <pre><code>{
+  <span class="key">"success"</span>: <span class="bool">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"isValid"</span>: <span class="bool">false</span>,
+    <span class="key">"detectedType"</span>: <span class="str">"INE"</span>,
+    <span class="key">"confidence"</span>: <span class="num">0.45</span>,
+    <span class="key">"reason"</span>: <span class="str">"Documento rechazado: imagen de baja calidad"</span>,
+    <span class="key">"extractedData"</span>: {
+      <span class="key">"nombre"</span>: <span class="str">"Juan P*rez Garc*a"</span>,
+      <span class="key">"curp"</span>: <span class="str">"***"</span>
+    },
+    <span class="key">"imageQuality"</span>: <span class="str">"mala"</span>,
+    <span class="key">"illegibleFields"</span>: [<span class="str">"curp"</span>, <span class="str">"claveElector"</span>, <span class="str">"vigencia"</span>]
+  }
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>✅ Respuesta Exitosa Completa</h2>
+      <div class="card">
+        <div class="code-header">
+          <span class="code-label">Todos los campos disponibles en una respuesta exitosa</span>
         </div>
         <pre><code>{
   <span class="key">"success"</span>: <span class="bool">true</span>,
   <span class="key">"data"</span>: {
     <span class="key">"isValid"</span>: <span class="bool">true</span>,
     <span class="key">"detectedType"</span>: <span class="str">"INE"</span>,
-    <span class="key">"confidence"</span>: <span class="num">0.92</span>,
+    <span class="key">"matchesExpected"</span>: <span class="bool">true</span>,
+    <span class="key">"reason"</span>: <span class="str">"Documento válido. 2 correcciones OCR aplicadas."</span>,
+    <span class="key">"confidence"</span>: <span class="num">0.94</span>,
     <span class="key">"extractedData"</span>: {
       <span class="key">"nombre"</span>: <span class="str">"Juan Pérez García"</span>,
       <span class="key">"curp"</span>: <span class="str">"PEGJ850101HDFRRL09"</span>,
-      <span class="key">"claveElector"</span>: <span class="str">"PRGRJN85010109H800"</span>
+      <span class="key">"claveElector"</span>: <span class="str">"PRGRJN85010109H800"</span>,
+      <span class="key">"vigencia"</span>: <span class="str">"2029"</span>,
+      <span class="key">"direccion"</span>: <span class="str">"Calle Reforma 123, Col. Centro"</span>,
+      <span class="key">"codigoPostal"</span>: <span class="str">"06600"</span>
     },
-    <span class="key">"processingTime"</span>: <span class="num">2340</span>
+    <span class="key">"ocrEngine"</span>: <span class="str">"hybrid"</span>,
+    <span class="key">"visionConfidence"</span>: <span class="num">0.97</span>,
+    <span class="key">"imageQuality"</span>: <span class="str">"buena"</span>,
+    <span class="key">"ocrCorrections"</span>: [<span class="str">"Position 4: O → 0"</span>, <span class="str">"Position 6: O → 0"</span>],
+    <span class="key">"illegibleFields"</span>: [],
+    <span class="key">"crossValidationWarnings"</span>: [],
+    <span class="key">"timestamp"</span>: <span class="str">"2026-01-08T20:30:00.000Z"</span>,
+    <span class="key">"processingTime"</span>: <span class="num">1850</span>
   }
 }</code></pre>
       </div>
