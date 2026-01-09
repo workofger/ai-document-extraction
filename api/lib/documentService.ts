@@ -43,6 +43,8 @@ export interface DocumentAnalysisResult {
   matchesExpected?: boolean;
   crossValidationWarnings?: string[];
   ocrCorrections?: string[];
+  imageQuality?: string;
+  illegibleFields?: string[];
 }
 
 export interface FieldValidationResult {
@@ -277,82 +279,125 @@ export const validateAndFixPlacas = (placas: string): FieldValidationResult => {
 // POST-PROCESSING
 // ===========================================
 
+// Helper to check if value contains illegible markers
+const isIllegible = (value: string): boolean => {
+  return value.includes('***') || value === '***' || value.includes('*');
+};
+
 const postProcessExtractedData = (data: ExtractedData): { 
   correctedData: ExtractedData; 
   corrections: string[]; 
-  overallConfidence: number 
+  overallConfidence: number;
+  illegibleFields: string[];
 } => {
   const correctedData: ExtractedData = { ...data };
   const corrections: string[] = [];
+  const illegibleFields: string[] = [];
   let totalConfidence = 0;
   let fieldCount = 0;
 
+  // Don't try to correct fields marked as illegible
   if (data.curp) {
-    const result = validateAndFixCURP(data.curp);
-    if (result.corrected !== data.curp) {
-      corrections.push(`CURP: "${data.curp}" → "${result.corrected}"`);
+    if (isIllegible(data.curp)) {
+      illegibleFields.push('curp');
+      correctedData.curp = data.curp; // Keep as-is with asterisks
+    } else {
+      const result = validateAndFixCURP(data.curp);
+      if (result.corrected !== data.curp) {
+        corrections.push(`CURP: "${data.curp}" → "${result.corrected}"`);
+      }
+      correctedData.curp = result.corrected;
+      totalConfidence += result.confidence;
+      fieldCount++;
     }
-    correctedData.curp = result.corrected;
-    totalConfidence += result.confidence;
-    fieldCount++;
   }
 
   if (data.rfc) {
-    const result = validateAndFixRFC(data.rfc);
-    if (result.corrected !== data.rfc) {
-      corrections.push(`RFC: "${data.rfc}" → "${result.corrected}"`);
+    if (isIllegible(data.rfc)) {
+      illegibleFields.push('rfc');
+      correctedData.rfc = data.rfc;
+    } else {
+      const result = validateAndFixRFC(data.rfc);
+      if (result.corrected !== data.rfc) {
+        corrections.push(`RFC: "${data.rfc}" → "${result.corrected}"`);
+      }
+      correctedData.rfc = result.corrected;
+      totalConfidence += result.confidence;
+      fieldCount++;
     }
-    correctedData.rfc = result.corrected;
-    totalConfidence += result.confidence;
-    fieldCount++;
   }
 
   if (data.clabe) {
-    const result = validateAndFixCLABE(data.clabe);
-    if (result.corrected !== data.clabe) {
-      corrections.push(`CLABE: "${data.clabe}" → "${result.corrected}"`);
+    if (isIllegible(data.clabe)) {
+      illegibleFields.push('clabe');
+      correctedData.clabe = data.clabe;
+    } else {
+      const result = validateAndFixCLABE(data.clabe);
+      if (result.corrected !== data.clabe) {
+        corrections.push(`CLABE: "${data.clabe}" → "${result.corrected}"`);
+      }
+      correctedData.clabe = result.corrected;
+      totalConfidence += result.confidence;
+      fieldCount++;
     }
-    correctedData.clabe = result.corrected;
-    totalConfidence += result.confidence;
-    fieldCount++;
   }
 
   if (data.placas) {
-    const result = validateAndFixPlacas(data.placas);
-    if (result.corrected !== data.placas) {
-      corrections.push(`Placas: "${data.placas}" → "${result.corrected}"`);
+    if (isIllegible(data.placas)) {
+      illegibleFields.push('placas');
+      correctedData.placas = data.placas;
+    } else {
+      const result = validateAndFixPlacas(data.placas);
+      if (result.corrected !== data.placas) {
+        corrections.push(`Placas: "${data.placas}" → "${result.corrected}"`);
+      }
+      correctedData.placas = result.corrected;
+      totalConfidence += result.confidence;
+      fieldCount++;
     }
-    correctedData.placas = result.corrected;
-    totalConfidence += result.confidence;
-    fieldCount++;
   }
 
   if (data.vin) {
-    const result = validateAndFixVIN(data.vin);
-    if (result.corrected !== data.vin) {
-      corrections.push(`VIN: "${data.vin}" → "${result.corrected}"`);
+    if (isIllegible(data.vin)) {
+      illegibleFields.push('vin');
+      correctedData.vin = data.vin;
+    } else {
+      const result = validateAndFixVIN(data.vin);
+      if (result.corrected !== data.vin) {
+        corrections.push(`VIN: "${data.vin}" → "${result.corrected}"`);
+      }
+      correctedData.vin = result.corrected;
+      totalConfidence += result.confidence;
+      fieldCount++;
     }
-    correctedData.vin = result.corrected;
-    totalConfidence += result.confidence;
-    fieldCount++;
   }
 
   if (data.nombre) {
-    correctedData.nombre = data.nombre
-      .trim()
-      .replace(/\s+/g, ' ')
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+    if (isIllegible(data.nombre)) {
+      illegibleFields.push('nombre');
+      correctedData.nombre = data.nombre;
+    } else {
+      correctedData.nombre = data.nombre
+        .trim()
+        .replace(/\s+/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+    }
   }
 
   if (data.razonSocial) {
-    correctedData.razonSocial = data.razonSocial.trim().replace(/\s+/g, ' ').toUpperCase();
+    if (isIllegible(data.razonSocial)) {
+      illegibleFields.push('razonSocial');
+      correctedData.razonSocial = data.razonSocial;
+    } else {
+      correctedData.razonSocial = data.razonSocial.trim().replace(/\s+/g, ' ').toUpperCase();
+    }
   }
 
-  const overallConfidence = fieldCount > 0 ? totalConfidence / fieldCount : 0.5;
+  const overallConfidence = fieldCount > 0 ? totalConfidence / fieldCount : 0.3;
 
-  return { correctedData, corrections, overallConfidence };
+  return { correctedData, corrections, overallConfidence, illegibleFields };
 };
 
 // ===========================================
@@ -385,42 +430,48 @@ Si encuentras estos datos en el documento, verifica si coinciden. Si no coincide
 `;
   }
 
-  return `Eres un experto en validación de documentos legales mexicanos para una plataforma logística.
-Tienes ALTA TOLERANCIA a errores de OCR y calidad de imagen.
+  return `Eres un experto en validación de documentos legales mexicanos.
 
 DOCUMENTO ESPERADO: "${expectedDocType === 'auto' ? 'Detectar automáticamente' : expectedDocType}"
 
 ${crossValidationInstructions}
 
-⚠️ INSTRUCCIONES CRÍTICAS PARA OCR:
-1. ACEPTA documentos aunque tengan ligera borrosidad, reflejos, o ángulos no perfectos.
-2. Considera errores comunes: "0"↔"O", "1"↔"I"↔"l", "5"↔"S", "8"↔"B", "2"↔"Z", "6"↔"G"
-3. CURP (18 chars): AAAA######HAAAAA## - Letras + Números + Género + Estado + Consonantes
-4. RFC (12-13 chars): AAA######XXX o AAAA######XXX
-5. CLABE (18 dígitos): Solo números
-6. EXTRAE datos aunque no estés 100% seguro - el sistema post-procesará.
-7. Un documento es VÁLIDO si es identificable y tiene al menos 50% de datos legibles.
+⚠️ REGLAS CRÍTICAS - NUNCA INVENTAR DATOS:
 
-TIPOS RECONOCIDOS: INE/IFE, Licencia de Conducir, Pasaporte, Tarjeta de Circulación, 
-Constancia de Situación Fiscal (RFC/SAT), Póliza de Seguro, Carátula Bancaria, 
-Comprobante de Domicilio, Acta Constitutiva, Poder Notarial, Fotografía de Vehículo, 
-Verificación Vehicular, Carta de Antecedentes, Factura, Contrato, Otro documento oficial
+1. **NUNCA INVENTES DATOS**. Si no puedes leer un campo claramente, usa "***" en lugar de inventar.
+2. Si un carácter es ilegible, usa "*" en su lugar. Ejemplo: "PEGJ85*1*1HDFRRL09"
+3. Si un campo completo es ilegible, usa "***" como valor.
+4. Si la imagen es muy borrosa, oscura o ilegible, marca isValid: false y explica en reason.
+5. Solo extrae datos que PUEDAS VER CLARAMENTE en el documento.
+6. Prefiere dejar campos vacíos o con "***" antes que adivinar.
 
-CAMPOS A EXTRAER: nombre, curp, rfc, claveElector, numeroLicencia, tipoLicencia, 
-vigencia, vigenciaFin, direccion, codigoPostal, placas, vin, modelo, marca, anio, 
-aseguradora, poliza, banco, clabe, numeroCuenta, razonSocial, telefono, email, folio
+CALIDAD DE IMAGEN:
+- Si menos del 50% del documento es legible: isValid: false, reason: "Imagen ilegible"
+- Si hay datos parcialmente legibles: usa "*" para caracteres que no puedas leer
+- confidence debe reflejar qué tan legible es el documento (0.0 a 1.0)
+
+FORMATOS MEXICANOS (solo para referencia, NO para inventar):
+- CURP: 18 caracteres (4 letras + 6 números + 1 letra género + 2 letras estado + 3 consonantes + 2 dígitos)
+- RFC: 12-13 caracteres
+- CLABE: 18 dígitos
+
+TIPOS DE DOCUMENTO: INE/IFE, Licencia de Conducir, Pasaporte, Tarjeta de Circulación, 
+Constancia Fiscal (RFC/SAT), Póliza de Seguro, Carátula Bancaria, Comprobante de Domicilio
+
+CAMPOS: nombre, curp, rfc, claveElector, numeroLicencia, tipoLicencia, vigencia, 
+vigenciaFin, direccion, codigoPostal, placas, vin, modelo, marca, anio, aseguradora, 
+poliza, banco, clabe, numeroCuenta, razonSocial, telefono, email, folio
 
 Responde SOLO con JSON válido:
 {
   "isValid": boolean,
-  "detectedType": "tipo detectado",
+  "detectedType": "tipo detectado o 'Ilegible'",
   "matchesExpected": boolean,
-  "reason": "explicación breve",
+  "reason": "explicación - incluye si hay problemas de legibilidad",
   "confidence": 0.0-1.0,
-  "extractedData": { "campo": "valor" },
-  "ocrWarnings": ["campos con dificultad de lectura"],
-  "crossValidationWarnings": ["inconsistencias"],
-  "suggestions": "sugerencia útil"
+  "extractedData": { "campo": "valor o *** si ilegible" },
+  "ocrWarnings": ["campos con problemas de lectura"],
+  "imageQuality": "buena" | "regular" | "mala" | "ilegible"
 }`;
 };
 
@@ -500,32 +551,48 @@ export async function analyzeDocument(
       }
     }
     
-    const { correctedData, corrections, overallConfidence } = postProcessExtractedData(rawData);
+    const { correctedData, corrections, overallConfidence, illegibleFields } = postProcessExtractedData(rawData);
+
+    // Check image quality from AI response
+    const imageQuality = parsed.imageQuality || 'regular';
+    const isImageIllegible = imageQuality === 'ilegible' || imageQuality === 'mala';
 
     // Build enhanced reason with corrections info
     let enhancedReason = String(parsed.reason || 'Documento procesado');
+    
+    if (illegibleFields.length > 0) {
+      enhancedReason += ` ⚠️ Campos ilegibles: ${illegibleFields.join(', ')}.`;
+    }
     
     if (parsed.ocrWarnings?.length > 0) {
       enhancedReason += ` 📋 Campos con lectura difícil: ${parsed.ocrWarnings.join(', ')}.`;
     }
     
     if (corrections.length > 0) {
-      enhancedReason += ` 🔧 ${corrections.length} correcciones aplicadas.`;
+      enhancedReason += ` 🔧 ${corrections.length} correcciones OCR aplicadas.`;
     }
     
     if (parsed.crossValidationWarnings?.length > 0) {
       enhancedReason += ` ⚠️ ${parsed.crossValidationWarnings.join(', ')}`;
     }
 
+    // Lower confidence if there are illegible fields
     const aiConfidence = Math.min(1, Math.max(0, Number(parsed.confidence) || 0));
-    const combinedConfidence = (aiConfidence * 0.6) + (overallConfidence * 0.4);
+    const illegiblePenalty = illegibleFields.length * 0.1;
+    const qualityPenalty = isImageIllegible ? 0.3 : (imageQuality === 'mala' ? 0.2 : 0);
+    const combinedConfidence = Math.max(0, (aiConfidence * 0.6) + (overallConfidence * 0.4) - illegiblePenalty - qualityPenalty);
 
-    console.log(`[DocVal] Analysis complete: ${parsed.isValid ? 'VALID' : 'INVALID'} - ${parsed.detectedType}`);
+    // If too many fields are illegible, mark as invalid
+    const shouldReject = illegibleFields.length >= 3 || isImageIllegible;
+
+    console.log(`[DocVal] Analysis complete: ${parsed.isValid && !shouldReject ? 'VALID' : 'INVALID'} - ${parsed.detectedType} (quality: ${imageQuality}, illegible: ${illegibleFields.length})`);
 
     return {
-      isValid: Boolean(parsed.isValid),
+      isValid: Boolean(parsed.isValid) && !shouldReject,
       detectedType: String(parsed.detectedType || 'Desconocido'),
-      reason: enhancedReason,
+      reason: shouldReject 
+        ? `Documento rechazado: imagen de baja calidad o demasiados campos ilegibles. ${enhancedReason}`
+        : enhancedReason,
       confidence: Math.min(1, Math.max(0, combinedConfidence)),
       extractedData: correctedData,
       timestamp: new Date().toISOString(),
@@ -533,9 +600,12 @@ export async function analyzeDocument(
       matchesExpected: Boolean(parsed.matchesExpected),
       crossValidationWarnings: [
         ...(parsed.crossValidationWarnings || []),
-        ...(parsed.ocrWarnings?.map((w: string) => `OCR: ${w}`) || [])
+        ...(parsed.ocrWarnings?.map((w: string) => `OCR: ${w}`) || []),
+        ...(illegibleFields.map(f => `Campo ilegible: ${f}`))
       ],
-      ocrCorrections: corrections
+      ocrCorrections: corrections,
+      imageQuality,
+      illegibleFields
     };
     
   } catch (error) {
