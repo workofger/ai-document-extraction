@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { cors } from '../lib/cors.js';
 import { validateApiKey } from '../lib/auth.js';
-import { analyzeDocument, analyzeDocumentFromText } from '../lib/documentService.js';
+import { analyzeDocument } from '../lib/documentService.js';
 
 export const config = {
   api: {
@@ -55,8 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const contentType = req.headers['content-type'] || '';
     
-    let dataUrl: string | null = null;
-    let pdfText: string | null = null;
+    let dataUrl: string = '';
     let documentType: string = 'auto';
     let fileSizeKB: number = 0;
     let originalFormat: string = 'image';
@@ -86,11 +85,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       fileSizeKB = Math.round(parsed.file.buffer.length / 1024);
       documentType = parsed.fields.documentType || 'auto';
 
-      // If PDF, extract text instead of converting to image
+      // If PDF, convert to image first
       if (PDF_TYPES.includes(parsed.file.mimeType)) {
-        console.log(`[${auth.apiKeyId}] Extracting text from PDF...`);
+        console.log(`[${auth.apiKeyId}] Converting PDF to image...`);
         originalFormat = 'pdf';
-        pdfText = await extractTextFromPdf(parsed.file.buffer);
+        dataUrl = await convertPdfToImage(parsed.file.buffer);
       } else {
         const base64 = parsed.file.buffer.toString('base64');
         dataUrl = `data:${parsed.file.mimeType};base64,${base64}`;
@@ -145,11 +144,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         fileSizeKB = Math.round(buffer.length / 1024);
         documentType = (body.documentType as string) || 'auto';
 
-        // If PDF, extract text instead of converting to image
+        // If PDF, convert to image first
         if (PDF_TYPES.includes(effectiveMimeType) || isPdfUrl) {
-          console.log(`[${auth.apiKeyId}] Extracting text from PDF URL...`);
+          console.log(`[${auth.apiKeyId}] Converting PDF from URL to image...`);
           originalFormat = 'pdf';
-          pdfText = await extractTextFromPdf(buffer);
+          dataUrl = await convertPdfToImage(buffer);
         } else {
           const base64 = buffer.toString('base64');
           dataUrl = `data:${mimeType};base64,${base64}`;
@@ -188,12 +187,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         fileSizeKB = Math.round(rawBase64.length / 1024);
         documentType = (body.documentType as string) || 'auto';
 
-        // If PDF, extract text instead of converting to image
+        // If PDF, convert to image first
         if (PDF_TYPES.includes(mimeType)) {
-          console.log(`[${auth.apiKeyId}] Extracting text from PDF base64...`);
+          console.log(`[${auth.apiKeyId}] Converting PDF base64 to image...`);
           originalFormat = 'pdf';
           const pdfBuffer = Buffer.from(rawBase64, 'base64');
-          pdfText = await extractTextFromPdf(pdfBuffer);
+          dataUrl = await convertPdfToImage(pdfBuffer);
         } else {
           dataUrl = `data:${mimeType};base64,${rawBase64}`;
         }
@@ -218,21 +217,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log(`[${auth.apiKeyId}] Analyzing document - type: ${documentType}, size: ${fileSizeKB}KB, format: ${originalFormat}`);
 
-    // Use different analysis method based on format
-    let result;
-    if (pdfText) {
-      // PDF: use text-based analysis
-      result = await analyzeDocumentFromText(pdfText, documentType);
-    } else if (dataUrl) {
-      // Image: use vision-based analysis
-      result = await analyzeDocument(dataUrl, documentType);
-    } else {
-      return res.status(400).json({
-        success: false,
-        error: 'No document data to analyze',
-        code: 'MISSING_DOCUMENT_DATA'
-      });
-    }
+    // Analyze document (both images and converted PDFs use the same pipeline)
+    const result = await analyzeDocument(dataUrl, documentType);
 
     console.log(`[${auth.apiKeyId}] Result: ${result.isValid ? 'VALID' : 'INVALID'} - ${result.detectedType} (${result.processingTime}ms)`);
 
@@ -268,27 +254,74 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 /**
- * Extract text from PDF buffer using pdf-parse
- * Returns extracted text for GPT processing
+ * Convert PDF to PNG image using ConvertAPI
+ * Returns base64 data URL of the first page
  */
-async function extractTextFromPdf(pdfBuffer: Buffer): Promise<string> {
+async function convertPdfToImage(pdfBuffer: Buffer): Promise<string> {
+  const apiSecret = process.env.CONVERTAPI_SECRET;
+  
+  if (!apiSecret) {
+    throw new Error('PDF processing not configured. CONVERTAPI_SECRET environment variable is required.');
+  }
+  
   try {
-    // pdf-parse is CommonJS, use require-style import
-    const pdfParse = (await import('pdf-parse')).default;
+    console.log('[PDF] Converting PDF to PNG via ConvertAPI...');
     
-    // Extract text from PDF
-    const data = await pdfParse(pdfBuffer);
+    // Convert buffer to base64
+    const pdfBase64 = pdfBuffer.toString('base64');
     
-    if (!data.text || data.text.trim().length === 0) {
-      throw new Error('No text could be extracted from PDF');
+    // Call ConvertAPI to convert PDF to PNG
+    const response = await fetch(`https://v2.convertapi.com/convert/pdf/to/png?Secret=${apiSecret}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        Parameters: [
+          {
+            Name: 'File',
+            FileValue: {
+              Name: 'document.pdf',
+              Data: pdfBase64
+            }
+          },
+          {
+            Name: 'PageRange',
+            Value: '1'  // Only first page
+          },
+          {
+            Name: 'ImageHeight',
+            Value: '2000'  // High quality
+          },
+          {
+            Name: 'ImageWidth',
+            Value: '1500'
+          }
+        ]
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[PDF] ConvertAPI error:', errorText);
+      throw new Error(`PDF conversion failed: ${response.status}`);
     }
     
-    console.log(`[PDF] Extracted ${data.text.length} chars from ${data.numpages} pages`);
+    const result = await response.json();
     
-    return data.text;
+    if (!result.Files || result.Files.length === 0) {
+      throw new Error('No output from PDF conversion');
+    }
+    
+    // Get the first page as base64
+    const pngBase64 = result.Files[0].FileData;
+    
+    console.log('[PDF] Successfully converted PDF to PNG');
+    
+    return `data:image/png;base64,${pngBase64}`;
     
   } catch (error) {
-    console.error('PDF text extraction error:', error);
+    console.error('PDF conversion error:', error);
     throw new Error(`Failed to process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
