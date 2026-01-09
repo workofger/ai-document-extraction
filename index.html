@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DocVal API - Internal Documentation | PartRunner</title>
@@ -529,8 +529,8 @@
       .endpoint-row .desc { margin-left: 0; width: 100%; }
     }
   </style>
-</head>
-<body>
+  </head>
+  <body>
   <!-- Parallax Background -->
   <div class="parallax-bg"></div>
 
@@ -549,12 +549,12 @@
       <div class="content">
         <!-- Hero -->
         <div class="hero">
-          <span class="hero-label">Documentación Interna</span>
+          <span class="hero-label">Internal Documentation</span>
           <h1>DocVal <span class="highlight">API</span><br>Document Validation Service</h1>
           <p class="hero-description">
-            Servicio interno para extracción y validación de documentos mexicanos. 
-            Pipeline híbrido: Google Vision OCR + GPT-4o. 
-            Integra con n8n, Supabase, o cualquier backend.
+            Internal service for Mexican document extraction and validation. 
+            Hybrid pipeline: Google Vision OCR + GPT-4o. 
+            Integrates with n8n, Supabase, or any backend.
           </p>
           <div class="hero-meta">
             <div class="meta-item">Base URL: <strong>ai-document-extraction.vercel.app</strong></div>
@@ -566,91 +566,91 @@
         <div class="stats-grid">
           <div class="stat">
             <div class="stat-value">~97%</div>
-            <div class="stat-label">Precisión OCR</div>
+            <div class="stat-label">OCR Accuracy</div>
           </div>
           <div class="stat">
             <div class="stat-value">&lt;2s</div>
-            <div class="stat-label">Respuesta</div>
+            <div class="stat-label">Response</div>
           </div>
           <div class="stat">
             <div class="stat-value">6</div>
-            <div class="stat-label">Tipos Doc</div>
+            <div class="stat-label">Doc Types</div>
           </div>
           <div class="stat">
             <div class="stat-value">5</div>
-            <div class="stat-label">Validadores</div>
+            <div class="stat-label">Validators</div>
           </div>
         </div>
 
         <!-- Pipeline -->
         <div class="section">
-          <h2 class="section-title">Pipeline de Procesamiento</h2>
+          <h2 class="section-title">Processing Pipeline</h2>
           <div class="pipeline">
             <div class="pipeline-step">
               <div class="pipeline-num">1</div>
               <h4>Google Vision</h4>
-              <p>Extracción de texto</p>
+              <p>Text extraction</p>
             </div>
             <span class="pipeline-arrow">→</span>
             <div class="pipeline-step">
               <div class="pipeline-num">2</div>
               <h4>GPT-4o</h4>
-              <p>Interpretación</p>
+              <p>Interpretation</p>
             </div>
             <span class="pipeline-arrow">→</span>
             <div class="pipeline-step">
               <div class="pipeline-num">3</div>
               <h4>Checksum</h4>
-              <p>Validación</p>
+              <p>Validation</p>
             </div>
           </div>
         </div>
 
         <!-- Documents -->
         <div class="section">
-          <h2 class="section-title">Documentos Soportados</h2>
+          <h2 class="section-title">Supported Documents</h2>
           <div class="cards-grid">
             <div class="card">
               <div class="card-icon">🪪</div>
               <h4>INE / IFE</h4>
-              <p>CURP, nombre, clave elector, dirección</p>
+              <p>CURP, name, voter key, address</p>
             </div>
             <div class="card">
               <div class="card-icon">🚗</div>
-              <h4>Licencia</h4>
-              <p>Número, tipo, vigencia</p>
+              <h4>Driver's License</h4>
+              <p>Number, type, validity</p>
             </div>
             <div class="card">
               <div class="card-icon">📋</div>
-              <h4>RFC</h4>
-              <p>RFC, razón social, domicilio</p>
+              <h4>RFC Certificate</h4>
+              <p>RFC, business name, address</p>
             </div>
             <div class="card">
               <div class="card-icon">🚙</div>
-              <h4>Tarjeta Circulación</h4>
-              <p>Placas, VIN, modelo</p>
+              <h4>Vehicle Registration</h4>
+              <p>Plates, VIN, model</p>
             </div>
             <div class="card">
               <div class="card-icon">🛡️</div>
-              <h4>Póliza Seguro</h4>
-              <p>Aseguradora, póliza, vigencia</p>
+              <h4>Insurance Policy</h4>
+              <p>Insurer, policy #, validity</p>
             </div>
             <div class="card">
               <div class="card-icon">🏦</div>
-              <h4>Carátula Bancaria</h4>
-              <p>CLABE, banco, titular</p>
+              <h4>Bank Statement</h4>
+              <p>CLABE, bank, account holder</p>
             </div>
           </div>
         </div>
 
         <!-- API Reference -->
         <div class="section">
-          <h2 class="section-title">Referencia de API</h2>
+          <h2 class="section-title">API Reference</h2>
 
           <!-- Auth -->
           <div class="api-block">
-            <h3>🔐 Autenticación</h3>
-            <p>Todos los endpoints requieren el header <code>X-API-Key</code> (excepto /api/health).</p>
+            <h3>🔐 Authentication</h3>
+            <p>All endpoints require the <code>X-API-Key</code> header (except /api/health).</p>
             <div class="code-block">
               <div class="code-header">
                 <span class="code-dot red"></span>
@@ -665,9 +665,9 @@
           <!-- Analyze -->
           <div class="api-block">
             <h3>📄 POST /api/documents/analyze</h3>
-            <p>Endpoint principal. Acepta URL, archivo, o base64.</p>
+            <p>Main endpoint. Accepts URL, file upload, or base64.</p>
             
-            <h4>URL de imagen</h4>
+            <h4>Image URL</h4>
             <div class="code-block">
               <div class="code-header">
                 <span class="code-dot red"></span>
@@ -681,7 +681,7 @@
   -d <span class="cs">'{"url": "https://storage.com/ine.jpg"}'</span></pre>
             </div>
 
-            <h4>Subir archivo</h4>
+            <h4>File Upload</h4>
             <div class="code-block">
               <div class="code-header">
                 <span class="code-dot red"></span>
@@ -694,7 +694,7 @@
   -F <span class="cs">"file=@documento.jpg"</span></pre>
             </div>
 
-            <h4>Respuesta</h4>
+            <h4>Response</h4>
             <div class="code-block">
               <div class="code-header">
                 <span class="code-dot red"></span>
@@ -722,7 +722,7 @@
           <!-- Validate -->
           <div class="api-block">
             <h3>✅ POST /api/documents/validate-field</h3>
-            <p>Valida y corrige CURP, RFC, CLABE, VIN, o Placas.</p>
+            <p>Validates and auto-corrects CURP, RFC, CLABE, VIN, or Plates.</p>
             <div class="code-block">
               <div class="code-header">
                 <span class="code-dot red"></span>
@@ -739,33 +739,33 @@
 
           <!-- Other Endpoints -->
           <div class="api-block">
-            <h3>📋 Otros Endpoints</h3>
+            <h3>📋 Other Endpoints</h3>
             <div class="endpoints-list">
               <div class="endpoint-row">
                 <span class="method get">GET</span>
                 <code>/api/health</code>
-                <span class="desc">Health check (sin auth)</span>
+                <span class="desc">Health check (no auth)</span>
               </div>
               <div class="endpoint-row">
                 <span class="method get">GET</span>
                 <code>/api/documents/supported-types</code>
-                <span class="desc">Lista tipos de documentos</span>
+                <span class="desc">List document types</span>
               </div>
               <div class="endpoint-row">
                 <span class="method post">POST</span>
                 <code>/api/documents/analyze-base64</code>
-                <span class="desc">Endpoint legacy</span>
+                <span class="desc">Legacy endpoint</span>
               </div>
             </div>
           </div>
 
           <!-- Fields -->
           <div class="api-block">
-            <h3>📊 Campos de Respuesta</h3>
+            <h3>📊 Response Fields</h3>
             <div class="fields-grid">
               <div class="field-item">
                 <code>isValid</code>
-                <span>Documento válido</span>
+                <span>Document valid</span>
               </div>
               <div class="field-item">
                 <code>detectedType</code>
@@ -777,7 +777,7 @@
               </div>
               <div class="field-item">
                 <code>extractedData</code>
-                <span>Campos extraídos</span>
+                <span>Extracted fields</span>
               </div>
               <div class="field-item">
                 <code>ocrEngine</code>
@@ -792,12 +792,12 @@
 
           <!-- Notes -->
           <div class="api-block">
-            <h3>⚠️ Notas</h3>
+            <h3>⚠️ Notes</h3>
             <ul class="notes-list">
-              <li>Campos ilegibles se marcan con <code>***</code></li>
-              <li>Documentos con 3+ campos ilegibles: <code>isValid: false</code></li>
-              <li>Correcciones OCR en <code>ocrCorrections</code></li>
-              <li><code>documentType</code> es opcional (auto-detecta)</li>
+              <li>Illegible fields are marked with <code>***</code></li>
+              <li>Documents with 3+ illegible fields: <code>isValid: false</code></li>
+              <li>OCR corrections logged in <code>ocrCorrections</code></li>
+              <li><code>documentType</code> is optional (auto-detects)</li>
             </ul>
           </div>
         </div>
@@ -809,5 +809,5 @@
       </footer>
     </div>
   </div>
-</body>
+  </body>
 </html>
