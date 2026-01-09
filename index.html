@@ -1,84 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DocVal API - Mexican Document Validation | PartRunner</title>
+  <title>DocVal API - Internal Documentation | PartRunner</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      /* PartRunner Colors: Black & Yellow */
-      --black: #000000;
-      --black-soft: #0a0a0a;
-      --black-card: #111111;
-      --black-elevated: #1a1a1a;
-      --black-border: #2a2a2a;
+      --black: #0d0d0d;
+      --black-card: rgba(20, 20, 20, 0.8);
+      --black-elevated: rgba(30, 30, 30, 0.9);
       
       --yellow: #FFD60A;
       --yellow-bright: #FFE44D;
-      --yellow-dim: #C9A800;
-      --yellow-glow: rgba(255, 214, 10, 0.4);
+      --yellow-dim: #B8960A;
+      --yellow-glow: rgba(255, 214, 10, 0.25);
       
       --white: #FFFFFF;
-      --white-90: rgba(255,255,255,0.9);
-      --white-70: rgba(255,255,255,0.7);
-      --white-50: rgba(255,255,255,0.5);
-      --white-30: rgba(255,255,255,0.3);
-      --white-10: rgba(255,255,255,0.1);
+      --white-95: rgba(255,255,255,0.95);
+      --white-80: rgba(255,255,255,0.8);
+      --white-60: rgba(255,255,255,0.6);
+      --white-40: rgba(255,255,255,0.4);
+      --white-15: rgba(255,255,255,0.15);
+      --white-08: rgba(255,255,255,0.08);
       
       --gradient-yellow: linear-gradient(135deg, #FFD60A 0%, #FF9500 100%);
       --gradient-gold: linear-gradient(135deg, #FFE44D 0%, #FFD60A 50%, #C9A800 100%);
-      --gradient-subtle: linear-gradient(180deg, rgba(255,214,10,0.08) 0%, transparent 50%);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--black);
+      background: linear-gradient(165deg, 
+        #0d0d0d 0%, 
+        #1a1a1f 25%, 
+        #141418 50%, 
+        #1f1a14 75%, 
+        #0d0d0d 100%);
+      background-attachment: fixed;
       color: var(--white);
       line-height: 1.6;
       min-height: 100vh;
-      overflow-x: hidden;
     }
 
-    /* Animated gradient background */
-    .bg-effects {
+    /* Subtle texture overlay */
+    body::before {
+      content: '';
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
+      background: 
+        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(255,214,10,0.04), transparent 50%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(255,149,0,0.03), transparent 50%);
       pointer-events: none;
       z-index: 0;
-      overflow: hidden;
-    }
-
-    .bg-effects::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: 
-        radial-gradient(ellipse 40% 30% at 70% 10%, rgba(255,214,10,0.12), transparent 50%),
-        radial-gradient(ellipse 50% 40% at 20% 80%, rgba(255,149,0,0.06), transparent 50%),
-        radial-gradient(ellipse 30% 20% at 90% 60%, rgba(255,214,10,0.08), transparent 50%);
-      animation: bgMove 20s ease-in-out infinite;
-    }
-
-    @keyframes bgMove {
-      0%, 100% { transform: translate(0, 0) rotate(0deg); }
-      33% { transform: translate(-2%, 2%) rotate(1deg); }
-      66% { transform: translate(2%, -1%) rotate(-1deg); }
     }
 
     .container {
       position: relative;
       z-index: 1;
-      max-width: 1200px;
+      max-width: 1100px;
       margin: 0 auto;
       padding: 0 2rem;
     }
@@ -89,369 +74,294 @@
       justify-content: space-between;
       align-items: center;
       padding: 1.5rem 0;
-      border-bottom: 1px solid var(--white-10);
+      border-bottom: 1px solid var(--white-08);
     }
 
     .nav-logo img {
-      height: 36px;
-      filter: brightness(1.1);
+      height: 32px;
     }
 
-    .nav-status {
+    .nav-badge {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      font-size: 0.875rem;
-      color: var(--white-70);
+      font-size: 0.8rem;
+      color: var(--white-60);
+      background: var(--white-08);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
     }
 
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--yellow);
+    .nav-badge .dot {
+      width: 6px;
+      height: 6px;
+      background: #22c55e;
       border-radius: 50%;
-      box-shadow: 0 0 12px var(--yellow-glow);
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.7; transform: scale(1.1); }
     }
 
     /* Hero */
     .hero {
-      text-align: center;
-      padding: 8rem 0 5rem;
+      padding: 5rem 0 4rem;
     }
 
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      background: var(--black-card);
-      border: 1px solid var(--yellow-dim);
-      border-radius: 9999px;
-      padding: 0.625rem 1.25rem;
-      font-size: 0.875rem;
-      color: var(--white-90);
-      margin-bottom: 2.5rem;
-      box-shadow: 0 0 30px rgba(255,214,10,0.1);
-    }
-
-    .hero-badge .badge-new {
-      background: var(--gradient-yellow);
-      color: var(--black);
-      font-weight: 700;
-      font-size: 0.7rem;
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
-      letter-spacing: 0.05em;
+    .hero-label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--yellow);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1rem;
     }
 
     h1 {
-      font-size: clamp(3rem, 7vw, 5rem);
-      font-weight: 800;
-      line-height: 1.05;
-      margin-bottom: 1.5rem;
-      letter-spacing: -0.03em;
+      font-size: clamp(2.25rem, 5vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 1.25rem;
+      letter-spacing: -0.02em;
+      color: var(--white-95);
     }
 
-    h1 .text-gradient {
-      background: var(--gradient-gold);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    h1 .highlight {
+      color: var(--yellow);
     }
 
     .hero-description {
-      font-size: 1.25rem;
-      color: var(--white-70);
+      font-size: 1.1rem;
+      color: var(--white-60);
       max-width: 600px;
-      margin: 0 auto 3rem;
-      line-height: 1.8;
+      line-height: 1.75;
+      margin-bottom: 2rem;
     }
 
-    /* CTA Buttons */
-    .cta-group {
+    .hero-meta {
       display: flex;
-      flex-direction: column;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      display: flex;
       align-items: center;
-      gap: 1.25rem;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--white-60);
     }
 
-    .btn-primary {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      background: var(--gradient-yellow);
-      color: var(--black);
-      border: none;
-      padding: 1.125rem 2.5rem;
-      border-radius: 14px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      box-shadow: 0 4px 20px var(--yellow-glow);
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 40px var(--yellow-glow);
-    }
-
-    .btn-primary svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    .cta-note {
-      font-size: 0.875rem;
-      color: var(--white-50);
-    }
-
-    .cta-note a {
+    .meta-item strong {
       color: var(--yellow);
-      text-decoration: none;
-      font-weight: 500;
+      font-weight: 600;
     }
 
-    /* Stats */
-    .stats {
+    /* Quick Stats */
+    .quick-stats {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      margin: 5rem 0;
+      gap: 1rem;
+      margin: 3rem 0;
+    }
+
+    .stat-card {
       background: var(--black-card);
-      border: 1px solid var(--white-10);
-      border-radius: 20px;
-      overflow: hidden;
-    }
-
-    .stat {
-      padding: 2.5rem 2rem;
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--white-08);
+      border-radius: 12px;
+      padding: 1.5rem;
       text-align: center;
-      border-right: 1px solid var(--white-10);
     }
-
-    .stat:last-child { border-right: none; }
 
     .stat-value {
-      font-size: 2.5rem;
-      font-weight: 800;
-      background: var(--gradient-gold);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 0.375rem;
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--yellow);
+      margin-bottom: 0.25rem;
     }
 
     .stat-label {
-      font-size: 0.875rem;
-      color: var(--white-50);
-      font-weight: 500;
+      font-size: 0.8rem;
+      color: var(--white-40);
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
 
-    /* Section Headers */
-    .section-header {
-      text-align: center;
-      margin-bottom: 3.5rem;
+    /* Section */
+    section {
+      margin: 4rem 0;
     }
 
-    .section-header h2 {
-      font-size: 2.25rem;
-      font-weight: 700;
-      margin-bottom: 0.75rem;
-      letter-spacing: -0.02em;
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--white-95);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
 
-    .section-header p {
-      color: var(--white-50);
-      font-size: 1.1rem;
-      max-width: 500px;
-      margin: 0 auto;
+    .section-title::before {
+      content: '';
+      width: 3px;
+      height: 1.25rem;
+      background: var(--yellow);
+      border-radius: 2px;
     }
 
     /* Pipeline */
-    .pipeline-section {
-      padding: 5rem 0;
-    }
-
     .pipeline {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1.5rem;
-      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 0.5rem;
+      margin-bottom: 3rem;
     }
 
     .pipeline-step {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
+      flex: 1;
       background: var(--black-card);
-      border: 1px solid var(--white-10);
-      border-radius: 16px;
-      padding: 1.5rem 2rem;
-      transition: all 0.3s ease;
-    }
-
-    .pipeline-step:hover {
-      border-color: var(--yellow-dim);
-      box-shadow: 0 0 30px rgba(255,214,10,0.1);
-    }
-
-    .pipeline-number {
-      width: 40px;
-      height: 40px;
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--white-08);
       border-radius: 12px;
-      background: var(--gradient-yellow);
-      display: flex;
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .pipeline-step .num {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-weight: 800;
-      font-size: 1rem;
+      width: 28px;
+      height: 28px;
+      background: var(--yellow);
       color: var(--black);
+      font-weight: 700;
+      font-size: 0.8rem;
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
     }
 
-    .pipeline-info h4 {
-      font-size: 1rem;
+    .pipeline-step h4 {
+      font-size: 0.9rem;
       font-weight: 600;
-      color: var(--white);
+      color: var(--white-95);
       margin-bottom: 0.25rem;
     }
 
-    .pipeline-info p {
-      font-size: 0.85rem;
-      color: var(--white-50);
+    .pipeline-step p {
+      font-size: 0.8rem;
+      color: var(--white-40);
     }
 
     .pipeline-arrow {
-      color: var(--yellow);
-      font-size: 1.5rem;
-      font-weight: 300;
-    }
-
-    /* Features */
-    .features-section {
-      padding: 5rem 0;
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
-    }
-
-    .feature-card {
-      background: var(--black-card);
-      border: 1px solid var(--white-10);
-      border-radius: 20px;
-      padding: 2rem;
-      transition: all 0.3s ease;
-    }
-
-    .feature-card:hover {
-      border-color: var(--yellow-dim);
-      transform: translateY(-4px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(255,214,10,0.08);
-    }
-
-    .feature-icon {
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      margin-bottom: 1.5rem;
-      font-size: 1.75rem;
-      background: rgba(255,214,10,0.1);
-      border: 1px solid rgba(255,214,10,0.2);
+      color: var(--white-15);
+      font-size: 1.25rem;
     }
 
-    .feature-card h3 {
-      font-size: 1.125rem;
-      font-weight: 600;
-      margin-bottom: 0.625rem;
-      color: var(--white);
-    }
-
-    .feature-card p {
-      color: var(--white-50);
-      font-size: 0.9rem;
-      line-height: 1.7;
-    }
-
-    /* Documents */
-    .docs-section {
-      padding: 5rem 0;
-    }
-
-    .docs-grid {
+    /* Cards Grid */
+    .cards-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 1.25rem;
+      gap: 1rem;
     }
 
-    .doc-card {
+    .card {
       background: var(--black-card);
-      border: 1px solid var(--white-10);
-      border-radius: 16px;
-      padding: 1.75rem;
-      display: flex;
-      align-items: flex-start;
-      gap: 1.25rem;
-      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--white-08);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: border-color 0.2s;
     }
 
-    .doc-card:hover {
-      border-color: var(--white-30);
+    .card:hover {
+      border-color: var(--white-15);
     }
 
-    .doc-icon {
-      font-size: 2.25rem;
-      line-height: 1;
+    .card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
     }
 
-    .doc-info h4 {
+    .card h4 {
+      font-size: 0.95rem;
       font-weight: 600;
+      color: var(--white-95);
       margin-bottom: 0.375rem;
-      color: var(--white);
     }
 
-    .doc-info p {
+    .card p {
       font-size: 0.85rem;
-      color: var(--white-50);
+      color: var(--white-40);
+      line-height: 1.5;
     }
 
-    /* Code Preview */
-    .code-section {
-      padding: 5rem 0;
-    }
-
-    .code-container {
+    /* API Reference */
+    .api-block {
       background: var(--black-card);
-      border: 1px solid var(--white-10);
-      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--white-08);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .api-block h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--yellow);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .api-block > p {
+      color: var(--white-60);
+      font-size: 0.9rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .api-block h4 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--white-40);
+      margin: 1.25rem 0 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .api-block code {
+      background: var(--white-08);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--white-80);
+    }
+
+    /* Code blocks */
+    .code-block {
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--white-08);
+      border-radius: 10px;
       overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      margin-bottom: 0.75rem;
     }
 
     .code-header {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 1rem 1.5rem;
-      background: var(--black-elevated);
-      border-bottom: 1px solid var(--white-10);
+      gap: 0.4rem;
+      padding: 0.6rem 1rem;
+      background: rgba(0,0,0,0.3);
+      border-bottom: 1px solid var(--white-08);
     }
 
     .code-dot {
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
     }
 
@@ -461,18 +371,18 @@
 
     .code-title {
       margin-left: auto;
-      font-size: 0.8rem;
-      color: var(--white-50);
+      font-size: 0.7rem;
+      color: var(--white-40);
       font-family: 'JetBrains Mono', monospace;
     }
 
     pre {
-      padding: 2rem;
+      padding: 1rem 1.25rem;
       overflow-x: auto;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.875rem;
-      line-height: 1.8;
-      color: var(--white-90);
+      font-size: 0.8rem;
+      line-height: 1.7;
+      color: var(--white-80);
     }
 
     .code-key { color: var(--yellow); }
@@ -480,86 +390,29 @@
     .code-num { color: #ffd3a5; }
     .code-bool { color: #c9b1ff; }
 
-    /* CTA Section */
-    /* API Documentation Section */
-    .docs-detail-section {
-      padding: 5rem 0 8rem;
-    }
-
-    .api-block {
-      background: var(--black-card);
-      border: 1px solid var(--white-10);
-      border-radius: 20px;
-      padding: 2rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .api-block h3 {
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: 0.75rem;
-      color: var(--yellow);
-    }
-
-    .api-block > p {
-      color: var(--white-70);
-      margin-bottom: 1.5rem;
-    }
-
-    .api-block h4 {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--white-70);
-      margin: 1.5rem 0 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .api-block code {
-      background: var(--black-elevated);
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.85rem;
-    }
-
-    .api-block .code-container {
-      margin-bottom: 1rem;
-    }
-
-    .endpoints-table {
+    /* Endpoints table */
+    .endpoints-list {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
 
     .endpoint-row {
       display: flex;
       align-items: center;
-      gap: 1rem;
-      padding: 1rem;
-      background: var(--black-elevated);
-      border-radius: 10px;
-    }
-
-    .endpoint-row code {
-      background: transparent;
-      color: var(--white);
-      font-weight: 500;
-    }
-
-    .endpoint-row span:last-child {
-      color: var(--white-50);
-      font-size: 0.9rem;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
     }
 
     .method {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 700;
-      padding: 0.25rem 0.5rem;
+      padding: 0.2rem 0.4rem;
       border-radius: 4px;
-      min-width: 45px;
+      min-width: 40px;
       text-align: center;
     }
 
@@ -573,321 +426,265 @@
       color: var(--yellow);
     }
 
+    .endpoint-row code {
+      background: transparent;
+      color: var(--white-80);
+      font-weight: 500;
+    }
+
+    .endpoint-row .desc {
+      color: var(--white-40);
+      font-size: 0.8rem;
+      margin-left: auto;
+    }
+
+    /* Fields grid */
     .fields-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
 
     .field-item {
       display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      padding: 1rem;
-      background: var(--black-elevated);
-      border-radius: 10px;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: rgba(0,0,0,0.3);
+      border-radius: 8px;
     }
 
     .field-item code {
       color: var(--yellow);
       background: transparent;
-      font-weight: 600;
+      font-weight: 500;
+      min-width: 120px;
     }
 
     .field-item span {
-      color: var(--white-50);
-      font-size: 0.85rem;
-    }
-
-    @media (max-width: 600px) {
-      .fields-grid {
-        grid-template-columns: 1fr;
-      }
-      .endpoint-row {
-        flex-wrap: wrap;
-      }
+      color: var(--white-40);
+      font-size: 0.8rem;
     }
 
     /* Footer */
     footer {
-      border-top: 1px solid var(--white-10);
-      padding: 2.5rem 0;
+      border-top: 1px solid var(--white-08);
+      padding: 2rem 0;
+      margin-top: 4rem;
       text-align: center;
-      color: var(--white-50);
-      font-size: 0.9rem;
+      color: var(--white-40);
+      font-size: 0.85rem;
     }
-
-    footer a {
-      color: var(--yellow);
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    /* User bar */
-    .user-bar {
-      position: fixed;
-      top: 1rem;
-      right: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      background: var(--black-card);
-      border: 1px solid var(--white-10);
-      border-radius: 9999px;
-      padding: 0.5rem 1rem;
-      font-size: 0.875rem;
-      z-index: 100;
-    }
-
-    .user-bar img {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-    }
-
-    .user-bar button {
-      background: none;
-      border: none;
-      color: var(--white-50);
-      cursor: pointer;
-      padding: 0.25rem;
-      display: flex;
-      transition: color 0.2s;
-    }
-
-    .user-bar button:hover { color: #ef4444; }
-
-    .hidden { display: none !important; }
 
     /* Responsive */
-    @media (max-width: 900px) {
-      .features-grid, .docs-grid { grid-template-columns: repeat(2, 1fr); }
-      .stats { grid-template-columns: repeat(2, 1fr); }
-      .stat { border-bottom: 1px solid var(--white-10); }
-      .stat:nth-child(2) { border-right: none; }
-      .stat:nth-child(3), .stat:nth-child(4) { border-bottom: none; }
+    @media (max-width: 800px) {
+      .cards-grid { grid-template-columns: repeat(2, 1fr); }
+      .quick-stats { grid-template-columns: repeat(2, 1fr); }
       .pipeline { flex-direction: column; }
-      .pipeline-arrow { transform: rotate(90deg); }
-      .cta-card { padding: 3rem 2rem; }
+      .pipeline-arrow { transform: rotate(90deg); justify-content: center; padding: 0.5rem; }
+      .fields-grid { grid-template-columns: 1fr; }
     }
 
-    @media (max-width: 600px) {
-      .features-grid, .docs-grid, .stats { grid-template-columns: 1fr; }
-      .stat { border-right: none; border-bottom: 1px solid var(--white-10); }
-      .stat:last-child { border-bottom: none; }
-      .hero { padding: 5rem 0 3rem; }
-      h1 { font-size: 2.5rem; }
+    @media (max-width: 550px) {
+      .cards-grid, .quick-stats { grid-template-columns: 1fr; }
+      .hero-meta { flex-direction: column; gap: 0.75rem; }
+      .endpoint-row { flex-wrap: wrap; }
+      .endpoint-row .desc { margin-left: 0; width: 100%; margin-top: 0.25rem; }
     }
   </style>
 </head>
 <body>
-  <div class="bg-effects"></div>
-
-  <!-- User Bar -->
-  <div id="userBar" class="user-bar hidden">
-    <img id="userAvatar" src="" alt="">
-    <span id="userName"></span>
-    <button onclick="signOut()" title="Sign out">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-    </button>
-  </div>
-
   <div class="container">
     <!-- Navigation -->
     <nav>
       <div class="nav-logo">
-        <img src="/assets/FULL, BICOLOR@2x.png" alt="PartRunner" onerror="this.outerHTML='<span style=\"font-weight:700;font-size:1.25rem;\">PartRunner</span>'">
+        <img src="/assets/FULL, BICOLOR@2x.png" alt="PartRunner" onerror="this.outerHTML='<span style=\"font-weight:700;font-size:1.1rem;color:var(--yellow)\">PartRunner</span>'">
       </div>
-      <div class="nav-status">
-        <span class="status-dot"></span>
-        All systems operational
+      <div class="nav-badge">
+        <span class="dot"></span>
+        API Online
       </div>
     </nav>
 
     <!-- Hero -->
     <section class="hero">
-      <div class="hero-badge">
-        <span class="badge-new">NEW</span>
-        Google Vision + GPT-4o Hybrid Pipeline
-      </div>
+      <span class="hero-label">Internal API Documentation</span>
       <h1>
-        Document Validation<br>
-        <span class="text-gradient">Powered by AI</span>
+        DocVal <span class="highlight">API</span><br>
+        Document Validation Service
       </h1>
       <p class="hero-description">
-        Extract, validate, and verify Mexican identity documents with enterprise-grade accuracy. 
-        Built for developers who need reliable document processing at scale.
+        Servicio interno para extracción y validación de documentos mexicanos. 
+        Usa Google Vision OCR + GPT-4o para máxima precisión. 
+        Integra con n8n, Supabase, o cualquier backend.
       </p>
-      <div class="cta-group">
-        <a href="#access" class="btn-primary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-          Access Documentation
-        </a>
-        <p class="cta-note">
-          Internal API • <a href="#access">@partrunner.com access only</a>
-        </p>
+      <div class="hero-meta">
+        <div class="meta-item">
+          <span>Base URL:</span>
+          <strong>ai-document-extraction.vercel.app</strong>
+        </div>
+        <div class="meta-item">
+          <span>Auth:</span>
+          <strong>X-API-Key header</strong>
+        </div>
       </div>
     </section>
 
-    <!-- Stats -->
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-value">97%</div>
-        <div class="stat-label">OCR Accuracy</div>
+    <!-- Quick Stats -->
+    <div class="quick-stats">
+      <div class="stat-card">
+        <div class="stat-value">~97%</div>
+        <div class="stat-label">Precisión OCR</div>
       </div>
-      <div class="stat">
+      <div class="stat-card">
         <div class="stat-value">&lt;2s</div>
-        <div class="stat-label">Response Time</div>
+        <div class="stat-label">Tiempo respuesta</div>
       </div>
-      <div class="stat">
-        <div class="stat-value">6+</div>
-        <div class="stat-label">Doc Types</div>
+      <div class="stat-card">
+        <div class="stat-value">6</div>
+        <div class="stat-label">Tipos de docs</div>
       </div>
-      <div class="stat">
+      <div class="stat-card">
         <div class="stat-value">5</div>
-        <div class="stat-label">Validators</div>
+        <div class="stat-label">Validadores</div>
       </div>
     </div>
 
     <!-- Pipeline -->
-    <section class="pipeline-section">
-      <div class="section-header">
-        <h2>Hybrid OCR Pipeline</h2>
-        <p>Triple-verification system for maximum accuracy</p>
-      </div>
+    <section>
+      <h2 class="section-title">Pipeline de Procesamiento</h2>
       <div class="pipeline">
         <div class="pipeline-step">
-          <div class="pipeline-number">1</div>
-          <div class="pipeline-info">
-            <h4>Google Cloud Vision</h4>
-            <p>High-precision text extraction</p>
-          </div>
+          <div class="num">1</div>
+          <h4>Google Vision</h4>
+          <p>Extracción de texto</p>
         </div>
-        <span class="pipeline-arrow">→</span>
+        <div class="pipeline-arrow">→</div>
         <div class="pipeline-step">
-          <div class="pipeline-number">2</div>
-          <div class="pipeline-info">
-            <h4>GPT-4o Analysis</h4>
-            <p>Semantic interpretation</p>
-          </div>
+          <div class="num">2</div>
+          <h4>GPT-4o</h4>
+          <p>Interpretación semántica</p>
         </div>
-        <span class="pipeline-arrow">→</span>
+        <div class="pipeline-arrow">→</div>
         <div class="pipeline-step">
-          <div class="pipeline-number">3</div>
-          <div class="pipeline-info">
-            <h4>Checksum Validation</h4>
-            <p>Mathematical verification</p>
-          </div>
+          <div class="num">3</div>
+          <h4>Checksum</h4>
+          <p>Validación matemática</p>
         </div>
       </div>
     </section>
 
-    <!-- Features -->
-    <section class="features-section">
-      <div class="section-header">
-        <h2>API Features</h2>
-        <p>Everything you need for document validation</p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">🔗</div>
-          <h3>URL Analysis</h3>
-          <p>Send image URLs directly. No base64 encoding needed. We download and process automatically.</p>
+    <!-- Documentos Soportados -->
+    <section>
+      <h2 class="section-title">Documentos Soportados</h2>
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-icon">🪪</div>
+          <h4>INE / IFE</h4>
+          <p>CURP, nombre, clave elector, dirección, vigencia</p>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">📤</div>
-          <h3>File Upload</h3>
-          <p>Upload JPG, PNG, WebP, or GIF files via multipart/form-data for seamless integration.</p>
+        <div class="card">
+          <div class="card-icon">🚗</div>
+          <h4>Licencia de Conducir</h4>
+          <p>Número, tipo, vigencia, nombre</p>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">🔐</div>
-          <h3>Data Integrity</h3>
-          <p>Never invents data. Illegible fields are marked with *** instead of guessing.</p>
+        <div class="card">
+          <div class="card-icon">📋</div>
+          <h4>Constancia RFC</h4>
+          <p>RFC, razón social, domicilio fiscal</p>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">✅</div>
-          <h3>Field Validation</h3>
-          <p>Validate and auto-correct CURP, RFC, CLABE, VIN with checksum verification.</p>
+        <div class="card">
+          <div class="card-icon">🚙</div>
+          <h4>Tarjeta de Circulación</h4>
+          <p>Placas, VIN, modelo, marca, propietario</p>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">🔧</div>
-          <h3>OCR Correction</h3>
-          <p>Automatic correction of common OCR errors like O→0, I→1, with full audit trail.</p>
+        <div class="card">
+          <div class="card-icon">🛡️</div>
+          <h4>Póliza de Seguro</h4>
+          <p>Aseguradora, número de póliza, vigencia</p>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3>Quality Scoring</h3>
-          <p>Get image quality assessment and confidence scores for every extraction.</p>
+        <div class="card">
+          <div class="card-icon">🏦</div>
+          <h4>Carátula Bancaria</h4>
+          <p>CLABE, banco, titular de cuenta</p>
         </div>
       </div>
     </section>
 
-    <!-- Supported Documents -->
-    <section class="docs-section">
-      <div class="section-header">
-        <h2>Supported Documents</h2>
-        <p>Mexican official documents with field extraction</p>
-      </div>
-      <div class="docs-grid">
-        <div class="doc-card">
-          <div class="doc-icon">🪪</div>
-          <div class="doc-info">
-            <h4>INE / IFE</h4>
-            <p>Voter ID • CURP, name, address</p>
-          </div>
-        </div>
-        <div class="doc-card">
-          <div class="doc-icon">🚗</div>
-          <div class="doc-info">
-            <h4>Driver's License</h4>
-            <p>Licencia • Number, type, validity</p>
-          </div>
-        </div>
-        <div class="doc-card">
-          <div class="doc-icon">📋</div>
-          <div class="doc-info">
-            <h4>RFC Certificate</h4>
-            <p>Tax ID • RFC, name, address</p>
-          </div>
-        </div>
-        <div class="doc-card">
-          <div class="doc-icon">🚙</div>
-          <div class="doc-info">
-            <h4>Vehicle Registration</h4>
-            <p>Tarjeta • Plates, VIN, model</p>
-          </div>
-        </div>
-        <div class="doc-card">
-          <div class="doc-icon">🛡️</div>
-          <div class="doc-info">
-            <h4>Insurance Policy</h4>
-            <p>Póliza • Policy #, coverage</p>
-          </div>
-        </div>
-        <div class="doc-card">
-          <div class="doc-icon">🏦</div>
-          <div class="doc-info">
-            <h4>Bank Statement</h4>
-            <p>CLABE • Account, bank</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- API Reference -->
+    <section>
+      <h2 class="section-title">Referencia de API</h2>
 
-    <!-- Code Preview -->
-    <section class="code-section">
-      <div class="section-header">
-        <h2>Simple Integration</h2>
-        <p>One API call to extract and validate documents</p>
-      </div>
-      <div class="code-container">
-        <div class="code-header">
-          <span class="code-dot red"></span>
-          <span class="code-dot yellow"></span>
-          <span class="code-dot green"></span>
-          <span class="code-title">response.json</span>
+      <!-- Auth -->
+      <div class="api-block">
+        <h3>🔐 Autenticación</h3>
+        <p>Todos los endpoints requieren el header <code>X-API-Key</code> (excepto /api/health).</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+            <span class="code-title">headers</span>
+          </div>
+          <pre><code><span class="code-key">X-API-Key</span>: tu-api-key-aqui</code></pre>
         </div>
-        <pre><code>{
+      </div>
+
+      <!-- Analyze -->
+      <div class="api-block">
+        <h3>📄 POST /api/documents/analyze</h3>
+        <p>Endpoint principal. Acepta URL de imagen, archivo, o base64.</p>
+        
+        <h4>Opción 1: URL de imagen</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+            <span class="code-title">curl</span>
+          </div>
+          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="code-str">"Content-Type: application/json"</span> \
+  -H <span class="code-str">"X-API-Key: tu-api-key"</span> \
+  -d <span class="code-str">'{"url": "https://storage.ejemplo.com/ine.jpg"}'</span></code></pre>
+        </div>
+
+        <h4>Opción 2: Subir archivo</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+            <span class="code-title">curl</span>
+          </div>
+          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="code-str">"X-API-Key: tu-api-key"</span> \
+  -F <span class="code-str">"file=@documento.jpg"</span></code></pre>
+        </div>
+
+        <h4>Opción 3: Base64</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+            <span class="code-title">curl</span>
+          </div>
+          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="code-str">"Content-Type: application/json"</span> \
+  -H <span class="code-str">"X-API-Key: tu-api-key"</span> \
+  -d <span class="code-str">'{"base64": "data:image/jpeg;base64,/9j/4AAQ..."}'</span></code></pre>
+        </div>
+
+        <h4>Respuesta</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-dot red"></span>
+            <span class="code-dot yellow"></span>
+            <span class="code-dot green"></span>
+            <span class="code-title">response.json</span>
+          </div>
+          <pre><code>{
   <span class="code-key">"success"</span>: <span class="code-bool">true</span>,
   <span class="code-key">"data"</span>: {
     <span class="code-key">"isValid"</span>: <span class="code-bool">true</span>,
@@ -899,88 +696,18 @@
       <span class="code-key">"claveElector"</span>: <span class="code-str">"PRGRJN85010109H800"</span>
     },
     <span class="code-key">"ocrEngine"</span>: <span class="code-str">"hybrid"</span>,
-    <span class="code-key">"visionConfidence"</span>: <span class="code-num">0.97</span>,
     <span class="code-key">"imageQuality"</span>: <span class="code-str">"buena"</span>,
     <span class="code-key">"processingTime"</span>: <span class="code-num">1850</span>
   }
 }</code></pre>
-      </div>
-    </section>
-
-    <!-- API Documentation Section -->
-    <section id="access" class="docs-detail-section">
-      <div class="section-header">
-        <h2>API Reference</h2>
-        <p>Complete endpoint documentation</p>
-      </div>
-
-      <!-- Authentication -->
-      <div class="api-block">
-        <h3>🔐 Authentication</h3>
-        <p>All endpoints (except <code>/api/health</code>) require the <code>X-API-Key</code> header.</p>
-        <div class="code-container">
-          <div class="code-header">
-            <span class="code-dot red"></span>
-            <span class="code-dot yellow"></span>
-            <span class="code-dot green"></span>
-            <span class="code-title">Header</span>
-          </div>
-          <pre><code><span class="code-key">X-API-Key</span>: your-api-key</code></pre>
         </div>
       </div>
 
-      <!-- Analyze Endpoint -->
-      <div class="api-block">
-        <h3>📄 POST /api/documents/analyze</h3>
-        <p>Analyze document images via URL, base64, or file upload.</p>
-        
-        <h4>Option 1: URL (Recommended)</h4>
-        <div class="code-container">
-          <div class="code-header">
-            <span class="code-dot red"></span>
-            <span class="code-dot yellow"></span>
-            <span class="code-dot green"></span>
-            <span class="code-title">curl</span>
-          </div>
-          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
-  -H <span class="code-str">"Content-Type: application/json"</span> \
-  -H <span class="code-str">"X-API-Key: your-api-key"</span> \
-  -d <span class="code-str">'{"url": "https://example.com/ine.jpg"}'</span></code></pre>
-        </div>
-
-        <h4>Option 2: File Upload</h4>
-        <div class="code-container">
-          <div class="code-header">
-            <span class="code-dot red"></span>
-            <span class="code-dot yellow"></span>
-            <span class="code-dot green"></span>
-            <span class="code-title">curl</span>
-          </div>
-          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
-  -H <span class="code-str">"X-API-Key: your-api-key"</span> \
-  -F <span class="code-str">"file=@document.jpg"</span></code></pre>
-        </div>
-
-        <h4>Option 3: Base64</h4>
-        <div class="code-container">
-          <div class="code-header">
-            <span class="code-dot red"></span>
-            <span class="code-dot yellow"></span>
-            <span class="code-dot green"></span>
-            <span class="code-title">curl</span>
-          </div>
-          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
-  -H <span class="code-str">"Content-Type: application/json"</span> \
-  -H <span class="code-str">"X-API-Key: your-api-key"</span> \
-  -d <span class="code-str">'{"base64": "data:image/jpeg;base64,/9j/4AAQ..."}'</span></code></pre>
-        </div>
-      </div>
-
-      <!-- Validate Field Endpoint -->
+      <!-- Validate Field -->
       <div class="api-block">
         <h3>✅ POST /api/documents/validate-field</h3>
-        <p>Validate and auto-correct CURP, RFC, CLABE, VIN, or Placas.</p>
-        <div class="code-container">
+        <p>Valida y corrige automáticamente CURP, RFC, CLABE, VIN, o Placas.</p>
+        <div class="code-block">
           <div class="code-header">
             <span class="code-dot red"></span>
             <span class="code-dot yellow"></span>
@@ -989,58 +716,43 @@
           </div>
           <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/validate-field \
   -H <span class="code-str">"Content-Type: application/json"</span> \
-  -H <span class="code-str">"X-API-Key: your-api-key"</span> \
+  -H <span class="code-str">"X-API-Key: tu-api-key"</span> \
   -d <span class="code-str">'{"field": "curp", "value": "PEGJ85O1O1HDFRRL09"}'</span></code></pre>
         </div>
-        <div class="code-container">
-          <div class="code-header">
-            <span class="code-dot red"></span>
-            <span class="code-dot yellow"></span>
-            <span class="code-dot green"></span>
-            <span class="code-title">response.json</span>
-          </div>
-          <pre><code>{
-  <span class="code-key">"success"</span>: <span class="code-bool">true</span>,
-  <span class="code-key">"data"</span>: {
-    <span class="code-key">"field"</span>: <span class="code-str">"curp"</span>,
-    <span class="code-key">"originalValue"</span>: <span class="code-str">"PEGJ85O1O1HDFRRL09"</span>,
-    <span class="code-key">"valid"</span>: <span class="code-bool">true</span>,
-    <span class="code-key">"corrected"</span>: <span class="code-str">"PEGJ850101HDFRRL09"</span>,
-    <span class="code-key">"corrections"</span>: [<span class="code-str">"Position 4: O → 0"</span>, <span class="code-str">"Position 6: O → 0"</span>]
-  }
-}</code></pre>
-        </div>
+        <p style="margin-top: 0.75rem; color: var(--white-40); font-size: 0.85rem;">
+          → Corrige automáticamente errores OCR comunes (O→0, I→1, etc.)
+        </p>
       </div>
 
-      <!-- Other Endpoints -->
+      <!-- Other endpoints -->
       <div class="api-block">
-        <h3>📋 Other Endpoints</h3>
-        <div class="endpoints-table">
+        <h3>📋 Otros Endpoints</h3>
+        <div class="endpoints-list">
           <div class="endpoint-row">
             <span class="method get">GET</span>
             <code>/api/health</code>
-            <span>Health check (no auth required)</span>
+            <span class="desc">Health check (sin auth)</span>
           </div>
           <div class="endpoint-row">
             <span class="method get">GET</span>
             <code>/api/documents/supported-types</code>
-            <span>List supported document types</span>
+            <span class="desc">Lista tipos de documentos</span>
           </div>
           <div class="endpoint-row">
             <span class="method post">POST</span>
             <code>/api/documents/analyze-base64</code>
-            <span>Legacy base64 endpoint</span>
+            <span class="desc">Endpoint legacy (solo base64)</span>
           </div>
         </div>
       </div>
 
-      <!-- Response Fields -->
+      <!-- Response fields -->
       <div class="api-block">
-        <h3>📊 Response Fields</h3>
+        <h3>📊 Campos de Respuesta</h3>
         <div class="fields-grid">
           <div class="field-item">
             <code>isValid</code>
-            <span>Document validity (boolean)</span>
+            <span>Documento válido (boolean)</span>
           </div>
           <div class="field-item">
             <code>detectedType</code>
@@ -1048,72 +760,47 @@
           </div>
           <div class="field-item">
             <code>confidence</code>
-            <span>0.0 - 1.0 confidence score</span>
+            <span>0.0 - 1.0</span>
           </div>
           <div class="field-item">
             <code>extractedData</code>
-            <span>Extracted fields object</span>
+            <span>Campos extraídos</span>
           </div>
           <div class="field-item">
             <code>ocrEngine</code>
-            <span>"hybrid" or "gpt-4o-vision"</span>
+            <span>hybrid | gpt-4o-vision</span>
           </div>
           <div class="field-item">
             <code>imageQuality</code>
-            <span>buena, regular, mala, ilegible</span>
+            <span>buena, regular, mala</span>
           </div>
           <div class="field-item">
             <code>ocrCorrections</code>
-            <span>Applied OCR fixes (O→0, etc.)</span>
+            <span>Correcciones aplicadas</span>
           </div>
           <div class="field-item">
             <code>illegibleFields</code>
-            <span>Fields marked as ***</span>
+            <span>Campos marcados ***</span>
           </div>
         </div>
+      </div>
+
+      <!-- Notas -->
+      <div class="api-block">
+        <h3>⚠️ Notas Importantes</h3>
+        <ul style="color: var(--white-60); font-size: 0.9rem; padding-left: 1.25rem; line-height: 1.8;">
+          <li>Si un campo es ilegible, se marca con <code>***</code> en lugar de inventar datos</li>
+          <li>Documentos con 3+ campos ilegibles se rechazan (<code>isValid: false</code>)</li>
+          <li>Las correcciones OCR se registran en <code>ocrCorrections</code></li>
+          <li>El campo <code>documentType</code> es opcional, se detecta automáticamente</li>
+        </ul>
       </div>
     </section>
 
     <!-- Footer -->
     <footer>
-      <p>Built by <a href="https://partrunner.com">PartRunner</a> Engineering</p>
+      <p>PartRunner Engineering • Internal Use Only</p>
     </footer>
   </div>
-
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  
-  <script>
-    const ALLOWED_DOMAIN = 'partrunner.com';
-    
-    function checkAuth() {
-      const user = localStorage.getItem('docval_user');
-      if (user) {
-        const userData = JSON.parse(user);
-        if (Date.now() - userData.timestamp < 24 * 60 * 60 * 1000) {
-          showUserBar(userData);
-          return true;
-        }
-        localStorage.removeItem('docval_user');
-      }
-      return false;
-    }
-    
-    function showUserBar(userData) {
-      document.getElementById('userBar').classList.remove('hidden');
-      document.getElementById('userAvatar').src = userData.picture || '';
-      document.getElementById('userName').textContent = userData.name || userData.email;
-    }
-    
-    function signInWithGoogle() {
-      window.location.href = '/api/auth/google';
-    }
-    
-    function signOut() {
-      localStorage.removeItem('docval_user');
-      window.location.reload();
-    }
-    
-    document.addEventListener('DOMContentLoaded', checkAuth);
-  </script>
-  </body>
+</body>
 </html>
