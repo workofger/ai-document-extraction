@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocVal API - Documentación</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-code: #1a1a24;
+      --border: #2a2a3a;
+      --text: #e4e4e7;
+      --text-muted: #71717a;
+      --accent: #22d3ee;
+      --accent-dim: #0891b2;
+      --green: #4ade80;
+      --yellow: #fbbf24;
+      --red: #f87171;
+      --purple: #a78bfa;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Outfit', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    /* Header */
+    header {
+      text-align: center;
+      padding: 4rem 0 3rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 3rem;
+    }
+    
+    .logo {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    
+    h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .tagline {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    
+    /* Status Badge */
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      padding: 0.5rem 1rem;
+      margin-top: 1.5rem;
+      font-size: 0.875rem;
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    /* Sections */
+    section {
+      margin-bottom: 3rem;
+    }
+    
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    h2::before {
+      content: '';
+      width: 4px;
+      height: 1.5rem;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+    
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    
+    .endpoint-grid {
+      display: grid;
+      gap: 1rem;
+    }
+    
+    .endpoint {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--bg);
+      border-radius: 8px;
+    }
+    
+    .method {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      min-width: 50px;
+      text-align: center;
+    }
+    
+    .method.get { background: rgba(74, 222, 128, 0.15); color: var(--green); }
+    .method.post { background: rgba(34, 211, 238, 0.15); color: var(--accent); }
+    
+    .endpoint-info { flex: 1; }
+    
+    .endpoint-path {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+    
+    .endpoint-desc {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+    
+    .auth-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      background: rgba(251, 191, 36, 0.15);
+      color: var(--yellow);
+      border-radius: 4px;
+    }
+    
+    /* Code blocks */
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.7;
+    }
+    
+    code {
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+    
+    .code-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .copy-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .copy-btn:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+    
+    /* Syntax highlighting */
+    .str { color: var(--green); }
+    .key { color: var(--accent); }
+    .num { color: var(--yellow); }
+    .bool { color: var(--purple); }
+    .comment { color: var(--text-muted); }
+    
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    
+    th, td {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    th {
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    td code {
+      background: var(--bg-code);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+    
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 2rem 0;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    
+    /* Responsive */
+    @media (max-width: 640px) {
+      h1 { font-size: 2rem; }
+      .container { padding: 1rem; }
+      .endpoint { flex-direction: column; gap: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">PartRunner</div>
+      <h1>DocVal API</h1>
+      <p class="tagline">API de validación de documentos mexicanos con GPT-4o Vision</p>
+      <div class="status">
+        <span class="status-dot"></span>
+        <span>Operativo</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Base URL</h2>
+      <div class="card">
+        <pre><code>https://ai-document-extraction.vercel.app</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Autenticación</h2>
+      <div class="card">
+        <p style="margin-bottom: 1rem; color: var(--text-muted);">
+          Todas las rutas (excepto <code>/api/health</code>) requieren autenticación via header:
+        </p>
+        <pre><code><span class="key">X-API-Key</span>: <span class="str">tu-api-key</span></code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Endpoints</h2>
+      <div class="card">
+        <div class="endpoint-grid">
+          <div class="endpoint">
+            <span class="method get">GET</span>
+            <div class="endpoint-info">
+              <div class="endpoint-path">/api/health</div>
+              <div class="endpoint-desc">Health check del servicio</div>
+            </div>
+          </div>
+          
+          <div class="endpoint">
+            <span class="method post">POST</span>
+            <div class="endpoint-info">
+              <div class="endpoint-path">/api/documents/analyze-base64</div>
+              <div class="endpoint-desc">Analizar documento con GPT-4o Vision</div>
+            </div>
+            <span class="auth-badge">API Key</span>
+          </div>
+          
+          <div class="endpoint">
+            <span class="method post">POST</span>
+            <div class="endpoint-info">
+              <div class="endpoint-path">/api/documents/validate-field</div>
+              <div class="endpoint-desc">Validar y corregir CURP, RFC, CLABE, VIN</div>
+            </div>
+            <span class="auth-badge">API Key</span>
+          </div>
+          
+          <div class="endpoint">
+            <span class="method get">GET</span>
+            <div class="endpoint-info">
+              <div class="endpoint-path">/api/documents/supported-types</div>
+              <div class="endpoint-desc">Listar tipos de documento soportados</div>
+            </div>
+            <span class="auth-badge">API Key</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Analizar Documento</h2>
+      <div class="card">
+        <div class="code-header">
+          <span class="code-label">Request</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze-base64 \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -H <span class="str">"X-API-Key: tu-api-key"</span> \
+  -d <span class="str">'{
+    "document": "data:image/jpeg;base64,/9j/4AAQ...",
+    "documentType": "INE"
+  }'</span></code></pre>
+      </div>
+      
+      <div class="card">
+        <div class="code-header">
+          <span class="code-label">Response</span>
+        </div>
+        <pre><code>{
+  <span class="key">"success"</span>: <span class="bool">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"isValid"</span>: <span class="bool">true</span>,
+    <span class="key">"detectedType"</span>: <span class="str">"INE"</span>,
+    <span class="key">"confidence"</span>: <span class="num">0.92</span>,
+    <span class="key">"extractedData"</span>: {
+      <span class="key">"nombre"</span>: <span class="str">"Juan Pérez García"</span>,
+      <span class="key">"curp"</span>: <span class="str">"PEGJ850101HDFRRL09"</span>,
+      <span class="key">"claveElector"</span>: <span class="str">"PRGRJN85010109H800"</span>
+    },
+    <span class="key">"processingTime"</span>: <span class="num">2340</span>
+  }
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Validar Campo</h2>
+      <div class="card">
+        <div class="code-header">
+          <span class="code-label">Request</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/validate-field \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -H <span class="str">"X-API-Key: tu-api-key"</span> \
+  -d <span class="str">'{"field": "curp", "value": "PEGJ85O1O1HDFRRL09"}'</span></code></pre>
+      </div>
+      
+      <div class="card">
+        <div class="code-header">
+          <span class="code-label">Response</span>
+        </div>
+        <pre><code>{
+  <span class="key">"success"</span>: <span class="bool">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"field"</span>: <span class="str">"curp"</span>,
+    <span class="key">"originalValue"</span>: <span class="str">"PEGJ85O1O1HDFRRL09"</span>,
+    <span class="key">"valid"</span>: <span class="bool">true</span>,
+    <span class="key">"corrected"</span>: <span class="str">"PEGJ850101HDFRRL09"</span>,
+    <span class="key">"corrections"</span>: [<span class="str">"Position 4: O → 0"</span>, <span class="str">"Position 6: O → 0"</span>]
+  }
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Tipos de Documento</h2>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Descripción</th>
+              <th>Datos Extraídos</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>INE</code></td>
+              <td>Credencial para votar</td>
+              <td>nombre, curp, claveElector, vigencia</td>
+            </tr>
+            <tr>
+              <td><code>LICENCIA</code></td>
+              <td>Licencia de conducir</td>
+              <td>nombre, numero, tipo, vigencia</td>
+            </tr>
+            <tr>
+              <td><code>RFC</code></td>
+              <td>Constancia de situación fiscal</td>
+              <td>rfc, nombre, domicilio, cp</td>
+            </tr>
+            <tr>
+              <td><code>TARJETA_CIRCULACION</code></td>
+              <td>Tarjeta vehicular</td>
+              <td>placas, vin, modelo, propietario</td>
+            </tr>
+            <tr>
+              <td><code>POLIZA_SEGURO</code></td>
+              <td>Póliza de seguro</td>
+              <td>aseguradora, poliza, vigencia</td>
+            </tr>
+            <tr>
+              <td><code>CLABE</code></td>
+              <td>Datos bancarios</td>
+              <td>banco, clabe, titular</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Campos Validables</h2>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Campo</th>
+              <th>Descripción</th>
+              <th>Ejemplo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>curp</code></td>
+              <td>Clave Única de Registro de Población</td>
+              <td>PEGJ850101HDFRRL09</td>
+            </tr>
+            <tr>
+              <td><code>rfc</code></td>
+              <td>Registro Federal de Contribuyentes</td>
+              <td>PEGJ850101ABC</td>
+            </tr>
+            <tr>
+              <td><code>clabe</code></td>
+              <td>Cuenta CLABE interbancaria</td>
+              <td>012180001234567890</td>
+            </tr>
+            <tr>
+              <td><code>vin</code></td>
+              <td>Número de serie vehicular</td>
+              <td>1HGBH41JXMN109186</td>
+            </tr>
+            <tr>
+              <td><code>placas</code></td>
+              <td>Placas vehiculares</td>
+              <td>ABC-123-A</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Códigos de Error</h2>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>HTTP</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>MISSING_API_KEY</code></td>
+              <td>401</td>
+              <td>Header X-API-Key no presente</td>
+            </tr>
+            <tr>
+              <td><code>INVALID_API_KEY</code></td>
+              <td>403</td>
+              <td>API Key inválida</td>
+            </tr>
+            <tr>
+              <td><code>MISSING_DOCUMENT</code></td>
+              <td>400</td>
+              <td>No se envió documento</td>
+            </tr>
+            <tr>
+              <td><code>INVALID_FIELD</code></td>
+              <td>400</td>
+              <td>Campo no soportado</td>
+            </tr>
+            <tr>
+              <td><code>ANALYSIS_ERROR</code></td>
+              <td>500</td>
+              <td>Error en análisis GPT-4o</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      <p>Desarrollado por <a href="https://partrunner.com">PartRunner</a></p>
+    </footer>
+  </div>
+
+  <script>
+    function copyCode(btn) {
+      const pre = btn.parentElement.nextElementSibling;
+      const code = pre.textContent;
+      navigator.clipboard.writeText(code);
+      btn.textContent = '¡Copiado!';
+      setTimeout(() => btn.textContent = 'Copiar', 2000);
+    }
+  </script>
+</body>
+</html>
+
