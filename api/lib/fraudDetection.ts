@@ -400,7 +400,117 @@ export function detectFraud(
   }
   
   // ===========================================
-  // 6. Vehicle-specific Checks
+  // 6. Banking Document Checks
+  // ===========================================
+  
+  if (documentType.toLowerCase().includes('banco') || 
+      documentType.toLowerCase().includes('cuenta') ||
+      documentType.toLowerCase().includes('carátula') ||
+      documentType.toLowerCase().includes('caratula')) {
+    
+    // CLABE validation
+    if (extractedData.clabe && !extractedData.clabe.includes('*')) {
+      const clabe = extractedData.clabe.replace(/\D/g, '');
+      
+      if (clabe.length !== 18) {
+        indicators.push({
+          type: 'invalid_format',
+          severity: 'critical',
+          field: 'clabe',
+          message: 'CLABE has incorrect length',
+          details: `CLABE length: ${clabe.length}, expected: 18`
+        });
+        riskScore += 40;
+      } else {
+        // Validate bank code
+        const bankCode = clabe.slice(0, 3);
+        const validBankCodes = ['002', '012', '014', '021', '030', '036', '042', '044', '058', '072', '127', '137', '140', '166'];
+        if (!validBankCodes.includes(bankCode) && parseInt(bankCode) < 2) {
+          indicators.push({
+            type: 'invalid_format',
+            severity: 'warning',
+            field: 'clabe',
+            message: 'CLABE bank code may be invalid',
+            details: `Bank code: ${bankCode}`
+          });
+          riskScore += 15;
+        }
+        
+        // Validate checksum
+        const weights = [3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7];
+        let sum = 0;
+        for (let i = 0; i < 17; i++) {
+          sum += (parseInt(clabe[i], 10) * weights[i]) % 10;
+        }
+        const expectedChecksum = (10 - (sum % 10)) % 10;
+        const actualChecksum = parseInt(clabe[17], 10);
+        
+        if (expectedChecksum !== actualChecksum) {
+          indicators.push({
+            type: 'checksum_mismatch',
+            severity: 'error',
+            field: 'clabe',
+            message: 'CLABE checksum is invalid',
+            details: `Expected: ${expectedChecksum}, Got: ${actualChecksum}`
+          });
+          riskScore += 30;
+        }
+      }
+    }
+    
+    // Bank name vs CLABE cross-validation
+    if (extractedData.banco && extractedData.clabe && !extractedData.clabe.includes('*')) {
+      const clabe = extractedData.clabe.replace(/\D/g, '');
+      const bankCode = clabe.slice(0, 3);
+      const bankName = extractedData.banco.toUpperCase();
+      
+      // Common bank code to name mapping
+      const bankMapping: Record<string, string[]> = {
+        '002': ['BANAMEX', 'CITIBANAMEX'],
+        '012': ['BBVA', 'BANCOMER'],
+        '014': ['SANTANDER'],
+        '021': ['HSBC'],
+        '072': ['BANORTE', 'IXE'],
+        '044': ['SCOTIABANK'],
+        '127': ['AZTECA', 'BANCO AZTECA'],
+        '137': ['BANCOPPEL', 'COPPEL'],
+        '036': ['INBURSA'],
+        '058': ['BANREGIO'],
+      };
+      
+      const expectedNames = bankMapping[bankCode];
+      if (expectedNames && !expectedNames.some(name => bankName.includes(name))) {
+        indicators.push({
+          type: 'cross_validation_failed',
+          severity: 'warning',
+          field: 'banco',
+          message: 'Bank name may not match CLABE bank code',
+          details: `CLABE bank code ${bankCode} typically belongs to ${expectedNames.join('/')}, but document shows "${extractedData.banco}"`
+        });
+        riskScore += 15;
+      }
+    }
+    
+    // Account holder name validation
+    if (extractedData.titularCuenta || extractedData.nombre) {
+      const holderName = (extractedData.titularCuenta || extractedData.nombre || '').toUpperCase();
+      
+      // Check for suspicious patterns in account holder name
+      if (/^(CUENTA|TITULAR|NOMBRE|TEST|PRUEBA)/.test(holderName)) {
+        indicators.push({
+          type: 'name_format_suspicious',
+          severity: 'warning',
+          field: 'titularCuenta',
+          message: 'Account holder name appears to be placeholder text',
+          details: `Name: ${holderName}`
+        });
+        riskScore += 20;
+      }
+    }
+  }
+  
+  // ===========================================
+  // 7. Vehicle-specific Checks
   // ===========================================
   
   if (documentType.toLowerCase().includes('circulacion') || 

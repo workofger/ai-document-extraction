@@ -1188,6 +1188,7 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
               <strong>📋 Rejection:</strong> Documents with 3+ illegible fields or poor image quality are rejected (<code>isValid: false</code>).<br><br>
               <strong>🔧 Auto-correction:</strong> Common OCR errors (O→0, I→1) are automatically corrected and logged in <code>ocrCorrections</code>. CURP verification digit is validated and corrected using the official algorithm.<br><br>
               <strong>🛡️ Fraud Detection:</strong> Every analysis includes a <code>fraudAnalysis</code> object with risk scoring (low/medium/high/critical), fraud indicators, and recommendations. Checks include: CURP checksum, state code validation, RFC cross-validation, expiration dates, and data consistency.<br><br>
+              <strong>🏦 Bank Statements (Critical):</strong> For multi-page bank statements, the API focuses on the <strong>carátula (cover page)</strong>. CLABE validation includes: 18-digit format, bank code verification (012=BBVA, 014=Santander, 072=Banorte, etc.), and checksum validation. Cross-validates bank name with CLABE bank code.<br><br>
               <strong>✅ Validatable Fields:</strong> <code>curp</code> <code>rfc</code> <code>clabe</code> <code>vin</code> <code>placas</code> <code>nss</code><br><br>
               <strong>📷 Formats:</strong> JPEG, PNG, WebP, GIF, and PDF (first page extracted for multi-page PDFs).<br><br>
               <strong>🚗 Vehicle Photos:</strong> Supports analysis of vehicle photographs (frontal, lateral, rear, VIN plate, motor, odometer, damage photos) with automatic brand/model identification.
@@ -1422,8 +1423,8 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
 }`
       },
       banco: {
-        desc: "Bank statement or account cover page with CLABE, account number, and holder info.",
-        fields: ["nombre", "banco", "clabe", "numeroCuenta", "rfc", "direccion"],
+        desc: "Bank statement cover page (carátula) - CRITICAL VALIDATION. For multi-page documents, focuses on first page. Extracts CLABE (18 digits), account holder, bank name.",
+        fields: ["titularCuenta", "banco", "clabe", "numeroCuenta", "rfc", "direccion", "sucursal", "tipoCuenta", "moneda", "fechaCorte", "periodoEstado", "saldoFinal"],
         filename: "estado_cuenta",
         validateField: "clabe",
         validateValue: "O1218OOO1234567890",
@@ -1431,28 +1432,35 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
   <span class="ck">"success"</span>: <span class="cb">true</span>,
   <span class="ck">"data"</span>: {
     <span class="ck">"isValid"</span>: <span class="cb">true</span>,
-    <span class="ck">"detectedType"</span>: <span class="cs">"Carátula Bancaria"</span>,
+    <span class="ck">"detectedType"</span>: <span class="cs">"Carátula Bancaria / Estado de Cuenta"</span>,
     <span class="ck">"matchesExpected"</span>: <span class="cb">true</span>,
-    <span class="ck">"reason"</span>: <span class="cs">"Valid document. CLABE checksum verified. 3 OCR corrections applied."</span>,
-    <span class="ck">"confidence"</span>: <span class="cn">0.92</span>,
+    <span class="ck">"reason"</span>: <span class="cs">"Valid document. CLABE checksum verified. Bank code 012 = BBVA BANCOMER."</span>,
+    <span class="ck">"confidence"</span>: <span class="cn">0.96</span>,
     <span class="ck">"extractedData"</span>: {
-      <span class="ck">"nombre"</span>: <span class="cs">"Juan Pérez García"</span>,
+      <span class="ck">"titularCuenta"</span>: <span class="cs">"JUAN PÉREZ GARCÍA"</span>,
       <span class="ck">"banco"</span>: <span class="cs">"BBVA"</span>,
-      <span class="ck">"clabe"</span>: <span class="cs">"012180001234567890"</span>,
+      <span class="ck">"clabe"</span>: <span class="cs">"012180001234567893"</span>,
       <span class="ck">"numeroCuenta"</span>: <span class="cs">"1234567890"</span>,
       <span class="ck">"rfc"</span>: <span class="cs">"PEGJ850101ABC"</span>,
-      <span class="ck">"direccion"</span>: <span class="cs">"Calle Reforma 123"</span>
+      <span class="ck">"direccion"</span>: <span class="cs">"Calle Reforma 123, Col Centro, CDMX"</span>,
+      <span class="ck">"sucursal"</span>: <span class="cs">"0180 - Reforma"</span>,
+      <span class="ck">"tipoCuenta"</span>: <span class="cs">"Cuenta de Cheques"</span>,
+      <span class="ck">"moneda"</span>: <span class="cs">"MXN"</span>,
+      <span class="ck">"fechaCorte"</span>: <span class="cs">"31/Dic/2025"</span>,
+      <span class="ck">"periodoEstado"</span>: <span class="cs">"01/Dic/2025 al 31/Dic/2025"</span>,
+      <span class="ck">"saldoFinal"</span>: <span class="cs">"$45,230.50"</span>
     },
     <span class="ck">"ocrEngine"</span>: <span class="cs">"hybrid"</span>,
-    <span class="ck">"visionConfidence"</span>: <span class="cn">0.93</span>,
+    <span class="ck">"visionConfidence"</span>: <span class="cn">0.97</span>,
     <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
-    <span class="ck">"ocrCorrections"</span>: [<span class="cs">"CLABE Position 0: O → 0"</span>],
+    <span class="ck">"ocrCorrections"</span>: [<span class="cs">"CLABE: Checksum corrected: 0 → 3"</span>],
     <span class="ck">"fraudAnalysis"</span>: {
       <span class="ck">"isAuthentic"</span>: <span class="cb">true</span>,
       <span class="ck">"riskLevel"</span>: <span class="cs">"low"</span>,
-      <span class="ck">"riskScore"</span>: <span class="cn">0</span>
+      <span class="ck">"riskScore"</span>: <span class="cn">0</span>,
+      <span class="ck">"fraudIndicators"</span>: []
     },
-    <span class="ck">"processingTime"</span>: <span class="cn">1780</span>
+    <span class="ck">"processingTime"</span>: <span class="cn">1850</span>
   }
 }`
       },

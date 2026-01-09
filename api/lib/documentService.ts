@@ -26,6 +26,19 @@ export interface ExtractedData {
   codigoPostal?: string;
   clabe?: string;
   banco?: string;
+  // Campos específicos de Estado de Cuenta / Carátula Bancaria
+  sucursal?: string;
+  tipoCuenta?: string;
+  moneda?: string;
+  fechaApertura?: string;
+  fechaCorte?: string;
+  periodoEstado?: string;
+  saldoInicial?: string;
+  saldoFinal?: string;
+  titularCuenta?: string;
+  cotitulares?: string;
+  domicilioFiscalBanco?: string;
+  // Vehículo
   marca?: string;
   anio?: string;
   telefono?: string;
@@ -340,28 +353,167 @@ export const validateAndFixRFC = (rfc: string): FieldValidationResult => {
   return { valid: isValid, corrected: result, confidence, corrections };
 };
 
+/**
+ * Valid Mexican bank codes (first 3 digits of CLABE)
+ * Source: Banxico
+ */
+const VALID_BANK_CODES: Record<string, string> = {
+  '002': 'BANAMEX',
+  '006': 'BANCOMEXT',
+  '009': 'BANOBRAS',
+  '012': 'BBVA BANCOMER',
+  '014': 'SANTANDER',
+  '019': 'BANJERCITO',
+  '021': 'HSBC',
+  '030': 'BAJÍO',
+  '032': 'IXE',
+  '036': 'INBURSA',
+  '037': 'INTERACCIONES',
+  '042': 'MIFEL',
+  '044': 'SCOTIABANK',
+  '058': 'BANREGIO',
+  '059': 'INVEX',
+  '060': 'BANSI',
+  '062': 'AFIRME',
+  '072': 'BANORTE',
+  '102': 'THE ROYAL BANK',
+  '103': 'AMERICAN EXPRESS',
+  '106': 'BANK OF AMERICA',
+  '108': 'MUFG',
+  '110': 'JP MORGAN',
+  '112': 'BMONEX',
+  '113': 'VE POR MAS',
+  '116': 'ING',
+  '124': 'DEUTSCHE',
+  '126': 'CREDIT SUISSE',
+  '127': 'AZTECA',
+  '128': 'AUTOFIN',
+  '129': 'BARCLAYS',
+  '130': 'COMPARTAMOS',
+  '131': 'BANCO FAMSA',
+  '132': 'MULTIVA BANCO',
+  '133': 'ACTINVER',
+  '134': 'WAL-MART',
+  '135': 'NAFIN',
+  '136': 'INTERCAM BANCO',
+  '137': 'BANCOPPEL',
+  '138': 'ABC CAPITAL',
+  '139': 'UBS BANK',
+  '140': 'CONSUBANCO',
+  '141': 'VOLKSWAGEN',
+  '143': 'CIBANCO',
+  '145': 'BBASE',
+  '147': 'BANKAOOL',
+  '148': 'PAGATODO',
+  '150': 'INMOBILIARIO',
+  '156': 'SABADELL',
+  '166': 'BANSEFI',
+  '168': 'HIPOTECARIA FEDERAL',
+  '600': 'MONEXCB',
+  '601': 'GBM',
+  '602': 'MASARI',
+  '605': 'VALUE',
+  '606': 'ESTRUCTURADORES',
+  '607': 'TIBER',
+  '608': 'VECTOR',
+  '610': 'B&B',
+  '614': 'ACCIVAL',
+  '615': 'MERRILL LYNCH',
+  '616': 'FINAMEX',
+  '617': 'VALMEX',
+  '618': 'UNICA',
+  '619': 'MAPFRE',
+  '620': 'PROFUTURO',
+  '621': 'CB ACTINVER',
+  '622': 'OACTIN',
+  '623': 'SKANDIA',
+  '626': 'CBDEUTSCHE',
+  '627': 'ZURICH',
+  '628': 'ZURICHVI',
+  '629': 'SU CASITA',
+  '630': 'CB INTERCAM',
+  '631': 'CI BOLSA',
+  '632': 'BULLTICK CB',
+  '633': 'STERLING',
+  '634': 'FINCOMUN',
+  '636': 'HDI SEGUROS',
+  '637': 'ORDER',
+  '638': 'AKALA',
+  '640': 'CB JPMORGAN',
+  '642': 'REFORMA',
+  '646': 'STP',
+  '647': 'TELECOMM',
+  '648': 'EVERCORE',
+  '649': 'SKANDIA',
+  '651': 'SEGMTY',
+  '652': 'ASEA',
+  '653': 'KUSPIT',
+  '655': 'UNAGRA',
+  '656': 'SOFIEXPRESS',
+  '659': 'ASP INTEGRA OPC',
+  '670': 'LIBERTAD',
+  '677': 'CAJA POP MEXICA',
+  '680': 'CRISTOBAL COLON',
+  '683': 'CAJA TELEFONIST',
+  '684': 'TRANSFER',
+  '685': 'FONDO (FIRA)',
+  '686': 'INVERCAP',
+  '689': 'FOMPED',
+  '706': 'ARCUS',
+  '710': 'NVIO',
+  '722': 'Mercado Pago',
+  '723': 'CUENCA',
+  '902': 'INDEVAL',
+  '903': 'CoDi Valida',
+};
+
 export const validateAndFixCLABE = (clabe: string): FieldValidationResult => {
   if (!clabe) return { valid: false, corrected: '', confidence: 0 };
   
   let normalized = normalizeOCRString(clabe, 'numeric').replace(/\D/g, '');
   const corrections: string[] = [];
   
+  // Fix length issues
   if (normalized.length !== 18) {
     if (normalized.length === 17) {
       normalized = '0' + normalized;
       corrections.push('Added leading zero');
-    }
-    if (normalized.length === 19) {
+    } else if (normalized.length === 19) {
       normalized = normalized.slice(0, 18);
       corrections.push('Removed extra digit');
+    } else if (normalized.length < 17 || normalized.length > 19) {
+      return {
+        valid: false,
+        corrected: normalized,
+        confidence: 0.2,
+        corrections: [`Invalid length: ${normalized.length} digits (expected 18)`]
+      };
     }
   }
   
+  // Validate bank code (first 3 digits)
+  const bankCode = normalized.slice(0, 3);
+  const bankName = VALID_BANK_CODES[bankCode];
+  const bankCodeValid = !!bankName;
+  
+  if (!bankCodeValid) {
+    corrections.push(`Unknown bank code: ${bankCode}`);
+  }
+  
+  // Calculate verification digit using weighted sum
   const weights = [3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7];
   let sum = 0;
   
   for (let i = 0; i < 17; i++) {
     const digit = parseInt(normalized[i], 10);
+    if (isNaN(digit)) {
+      return {
+        valid: false,
+        corrected: normalized,
+        confidence: 0.2,
+        corrections: ['CLABE contains non-numeric characters']
+      };
+    }
     sum += (digit * weights[i]) % 10;
   }
   
@@ -369,18 +521,40 @@ export const validateAndFixCLABE = (clabe: string): FieldValidationResult => {
   const actualChecksum = parseInt(normalized[17], 10);
   const checksumValid = expectedChecksum === actualChecksum;
   
+  // Auto-correct checksum if bank code is valid
   if (!checksumValid) {
-    corrections.push(`Checksum mismatch: expected ${expectedChecksum}, got ${actualChecksum}`);
+    if (bankCodeValid) {
+      corrections.push(`Checksum corrected: ${actualChecksum} → ${expectedChecksum}`);
+      normalized = normalized.slice(0, 17) + expectedChecksum.toString();
+    } else {
+      corrections.push(`Checksum invalid: expected ${expectedChecksum}, got ${actualChecksum}`);
+    }
   }
   
-  const confidence = checksumValid ? 0.95 : 0.6;
+  // Calculate confidence
+  let confidence = 1.0;
+  if (!bankCodeValid) confidence -= 0.25;
+  if (!checksumValid && !bankCodeValid) confidence -= 0.25;
+  if (corrections.length > 0) confidence -= corrections.length * 0.05;
+  confidence = Math.max(0.3, confidence);
+  
+  const isValid = normalized.length === 18 && (checksumValid || bankCodeValid);
   
   return { 
-    valid: normalized.length === 18 && checksumValid, 
+    valid: isValid, 
     corrected: normalized, 
     confidence,
-    corrections
+    corrections: corrections.length > 0 ? corrections : undefined
   };
+};
+
+/**
+ * Get bank name from CLABE
+ */
+export const getBankNameFromCLABE = (clabe: string): string | null => {
+  if (!clabe || clabe.length < 3) return null;
+  const bankCode = clabe.slice(0, 3);
+  return VALID_BANK_CODES[bankCode] || null;
 };
 
 export const validateAndFixVIN = (vin: string): FieldValidationResult => {
@@ -718,8 +892,58 @@ TIPOS DE DOCUMENTO SOPORTADOS Y SUS CAMPOS ESPECÍFICOS:
 • Constancia de Situación Fiscal (RFC/SAT)
   → nombre, rfc, curp, razonSocial, direccion, codigoPostal, email, telefono, folio
 
+🏦 **ESTADOS DE CUENTA / CARÁTULAS BANCARIAS (VALIDACIÓN CRÍTICA):**
+
+⚠️ INSTRUCCIONES ESPECIALES PARA DOCUMENTOS BANCARIOS:
+- Si el documento tiene múltiples páginas, ENFÓCATE EN LA CARÁTULA (primera página)
+- La carátula contiene los datos más importantes: titular, CLABE, número de cuenta
+- La CLABE es el campo MÁS CRÍTICO - debe tener exactamente 18 dígitos
+- Verifica que el nombre del titular coincida con otros documentos del expediente
+- Los estados de cuenta pueden ser de: BBVA, Santander, Banorte, HSBC, Citibanamex, Scotiabank, Banco Azteca, BanCoppel, Inbursa, Banregio, etc.
+
 • Carátula Bancaria / Estado de Cuenta
-  → nombre, banco, clabe, numeroCuenta, rfc, direccion
+  → CAMPOS OBLIGATORIOS:
+    - titularCuenta (nombre completo del titular, exactamente como aparece)
+    - banco (nombre del banco emisor)
+    - clabe (18 dígitos - CRÍTICO, verificar cada dígito)
+    - numeroCuenta (número de cuenta sin guiones ni espacios)
+  → CAMPOS ADICIONALES (extraer si están visibles):
+    - rfc (del titular)
+    - direccion (domicilio fiscal del titular)
+    - codigoPostal
+    - sucursal (nombre o número de sucursal)
+    - tipoCuenta (cheques, ahorro, nómina, inversión, etc.)
+    - moneda (MXN, USD, etc.)
+    - fechaApertura (fecha de apertura de la cuenta)
+    - fechaCorte (fecha de corte del estado)
+    - periodoEstado (ej: "01/Dic/2025 al 31/Dic/2025")
+    - saldoInicial (saldo al inicio del periodo)
+    - saldoFinal (saldo al final del periodo)
+    - cotitulares (si hay más de un titular)
+    - email, telefono
+
+FORMATO DE CLABE INTERBANCARIA:
+┌─────────────────────────────────────────────────────────┐
+│  XXX   +   XXX   +   XXXXXXXXXXX   +   X               │
+│ Banco    Plaza      Cuenta          Verificador        │
+│ (3 díg)  (3 díg)    (11 dígitos)    (1 dígito)         │
+└─────────────────────────────────────────────────────────┘
+
+CÓDIGOS DE BANCO COMUNES (primeros 3 dígitos de CLABE):
+- 002: BANAMEX          - 012: BBVA BANCOMER
+- 014: SANTANDER        - 021: HSBC
+- 030: BAJÍO            - 036: INBURSA
+- 042: MIFEL            - 044: SCOTIABANK
+- 058: BANREGIO         - 072: BANORTE
+- 106: BANK OF AMERICA  - 127: AZTECA
+- 130: COMPARTAMOS      - 137: BANCOPPEL
+- 138: ABC CAPITAL      - 140: CONSUBANCO
+
+VALIDACIONES IMPORTANTES:
+1. La CLABE debe tener exactamente 18 dígitos numéricos
+2. El código de banco (primeros 3 dígitos) debe ser válido
+3. El nombre del titular debe coincidir con documentos de identidad
+4. Si hay discrepancias, reportarlas en crossValidationWarnings
 
 🚗 **DOCUMENTOS VEHICULARES:**
 
@@ -861,7 +1085,15 @@ TIPOS DE DOCUMENTO SOPORTADOS:
 
 💼 FISCAL:
 • Constancia RFC/SAT → nombre, rfc, curp, razonSocial, direccion, codigoPostal, email
-• Carátula Bancaria → nombre, banco, clabe, numeroCuenta, rfc
+
+🏦 ESTADOS DE CUENTA / CARÁTULAS BANCARIAS (PRIORIDAD ALTA):
+⚠️ Si es un estado de cuenta de múltiples páginas, ENFÓCATE EN LA CARÁTULA (primera página)
+• Carátula Bancaria → CAMPOS CRÍTICOS:
+  - titularCuenta (nombre exacto del titular)
+  - banco (BBVA, Santander, Banorte, HSBC, Citibanamex, etc.)
+  - clabe (18 dígitos - VERIFICAR CADA DÍGITO)
+  - numeroCuenta
+  CAMPOS ADICIONALES: rfc, direccion, sucursal, tipoCuenta, moneda, fechaCorte, periodoEstado, saldoFinal
 
 🚗 VEHICULAR:
 • Tarjeta de Circulación → nombre, placas, vin, marca, modelo, anio, vigencia, numeroMotor
@@ -1237,7 +1469,7 @@ export const SUPPORTED_DOCUMENT_TYPES = [
   
   // Documentos Fiscales
   { id: 'rfc', name: 'Constancia de Situación Fiscal', category: 'fiscal', description: 'Constancia del SAT con RFC', fields: ['nombre', 'rfc', 'curp', 'razonSocial', 'direccion', 'codigoPostal', 'email', 'telefono', 'folio'] },
-  { id: 'banco', name: 'Carátula Bancaria', category: 'fiscal', description: 'Estado de cuenta o carátula bancaria', fields: ['nombre', 'banco', 'clabe', 'numeroCuenta', 'rfc', 'direccion'] },
+  { id: 'banco', name: 'Carátula Bancaria / Estado de Cuenta', category: 'bancario', description: 'Estado de cuenta o carátula bancaria - VALIDACIÓN CRÍTICA', fields: ['titularCuenta', 'banco', 'clabe', 'numeroCuenta', 'rfc', 'direccion', 'sucursal', 'tipoCuenta', 'moneda', 'fechaCorte', 'periodoEstado', 'saldoFinal', 'cotitulares'] },
   
   // Documentos Vehiculares
   { id: 'circulacion', name: 'Tarjeta de Circulación', category: 'vehicular', description: 'Tarjeta de circulación vehicular', fields: ['nombre', 'placas', 'vin', 'marca', 'modelo', 'anio', 'vigencia', 'folio', 'numeroMotor'] },
@@ -1289,8 +1521,10 @@ export const EXTRACTABLE_FIELDS = [
   'tipoVehiculo', 'color', 'estadoVehiculo', 'kilometraje',
   // Seguro
   'aseguradora', 'poliza',
-  // Bancario
-  'banco', 'clabe', 'numeroCuenta',
+  // Bancario / Estado de Cuenta
+  'banco', 'clabe', 'numeroCuenta', 'titularCuenta', 'sucursal', 
+  'tipoCuenta', 'moneda', 'fechaApertura', 'fechaCorte', 'periodoEstado',
+  'saldoInicial', 'saldoFinal', 'cotitulares', 'domicilioFiscalBanco',
   // Fiscal
   'razonSocial',
   // Domicilio
@@ -1320,9 +1554,13 @@ export const DOCUMENT_CATEGORIES = {
   identificacion: 'Identificación Personal',
   seguridad_social: 'Seguridad Social',
   fiscal: 'Documentos Fiscales',
+  bancario: 'Documentos Bancarios',
   vehicular: 'Documentos Vehiculares',
   foto_vehiculo: 'Fotografías de Vehículos',
   otros: 'Otros Documentos',
   auto: 'Detección Automática'
 };
+
+// Bank codes export for external use
+export { VALID_BANK_CODES };
 
