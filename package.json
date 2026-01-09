@@ -12,7 +12,7 @@
     "lint:fix": "eslint . --ext ts,tsx --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\"",
     "type-check": "tsc --noEmit",
-    "type-check:api": "tsc --project api-vercel/tsconfig.json --noEmit",
+    "type-check:api": "tsc --project api/tsconfig.json --noEmit",
     "clean": "rm -rf dist node_modules/.vite",
     "vercel:dev": "vercel dev",
     "vercel:deploy": "vercel",

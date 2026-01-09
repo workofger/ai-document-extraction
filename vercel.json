@@ -2,16 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "name": "docval-api",
-  "rewrites": [
-    {
-      "source": "/api/health",
-      "destination": "/api-vercel/health"
-    },
-    {
-      "source": "/api/documents/:path*",
-      "destination": "/api-vercel/documents/:path*"
-    }
-  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
   "headers": [
     {
       "source": "/api/(.*)",
@@ -36,7 +29,7 @@
     }
   ],
   "functions": {
-    "api-vercel/**/*.ts": {
+    "api/**/*.ts": {
       "maxDuration": 60,
       "memory": 1024
     }

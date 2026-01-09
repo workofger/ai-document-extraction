@@ -4,11 +4,11 @@
 
 **DocVal API** es una API serverless para validar documentos mexicanos (INE, RFC, Licencia, etc.) usando GPT-4o Vision de OpenAI. Extrae automáticamente datos como CURP, RFC, nombres, etc. y los corrige por errores de OCR.
 
-### Estructura del Proyecto (YA CONFIGURADA)
+### Estructura del Proyecto
 
 ```
-partrunner-docval-ai/
-├── api-vercel/                    # ← API Serverless para Vercel
+ai-document-extraction/
+├── api/                           # ← API Serverless para Vercel
 │   ├── _lib/
 │   │   ├── auth.ts               # Autenticación X-API-Key
 │   │   ├── cors.ts               # Middleware CORS
@@ -18,34 +18,28 @@ partrunner-docval-ai/
 │   │   ├── validate-field.ts     # POST: Validar campo
 │   │   └── supported-types.ts    # GET: Tipos soportados
 │   ├── health.ts                 # GET: Health check
-│   └── tsconfig.json             # ← Config TypeScript para API
+│   └── tsconfig.json             # Config TypeScript para API
+├── api-express/                   # ← API Express alternativa (Docker)
 ├── src/                          # Frontend React (Vite)
-├── vercel.json                   # ← Config de Vercel (rewrites + functions)
-├── tsconfig.json                 # ← Config TypeScript para Frontend
-└── package.json                  # ← Dependencias (ya incluye @vercel/node)
+├── vercel.json                   # Config de Vercel
+├── tsconfig.json                 # Config TypeScript para Frontend
+└── package.json                  # Dependencias
 ```
 
 ---
 
-## ✅ Archivos Ya Configurados
+## ✅ Configuración de Vercel
 
-### 1. vercel.json
+### vercel.json
 
 ```json
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "name": "docval-api",
-  "rewrites": [
-    {
-      "source": "/api/health",
-      "destination": "/api-vercel/health"
-    },
-    {
-      "source": "/api/documents/:path*",
-      "destination": "/api-vercel/documents/:path*"
-    }
-  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
   "headers": [
     {
       "source": "/api/(.*)",
@@ -58,7 +52,7 @@ partrunner-docval-ai/
     }
   ],
   "functions": {
-    "api-vercel/**/*.ts": {
+    "api/**/*.ts": {
       "maxDuration": 60,
       "memory": 1024
     }
@@ -66,59 +60,23 @@ partrunner-docval-ai/
 }
 ```
 
-**Nota**: No incluye `buildCommand`, `outputDirectory` ni `framework` porque Vercel detecta automáticamente el frontend Vite y las serverless functions por separado.
-
-### 2. package.json (Dependencias)
-
-```json
-{
-  "dependencies": {
-    "openai": "^4.77.0"
-  },
-  "devDependencies": {
-    "@vercel/node": "^3.2.0",
-    "@types/node": "^22.10.2",
-    "typescript": "~5.7.2",
-    "vercel": "^37.0.0"
-  }
-}
-```
-
-### 3. api-vercel/tsconfig.json (TypeScript para Serverless)
-
-```json
-{
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "lib": ["ES2022"],
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "types": ["node", "@vercel/node"]
-  },
-  "include": ["./**/*.ts"]
-}
-```
-
-### 4. Imports en los Endpoints
+### Imports en los Endpoints
 
 Los imports usan rutas relativas correctas:
 
-- `api-vercel/health.ts` → importa desde `./_lib/cors`
-- `api-vercel/documents/*.ts` → importan desde `../_lib/cors`, `../_lib/auth`, `../_lib/documentService`
+- `api/health.ts` → importa desde `./_lib/cors`
+- `api/documents/*.ts` → importan desde `../_lib/cors`, `../_lib/auth`, `../_lib/documentService`
 
 ---
 
 ## 🎯 Endpoints Disponibles
 
-| Método | Ruta Pública | Archivo Real | Descripción |
-|--------|--------------|--------------|-------------|
-| GET | `/api/health` | `api-vercel/health.ts` | Health check (sin auth) |
-| POST | `/api/documents/analyze-base64` | `api-vercel/documents/analyze-base64.ts` | Analizar documento |
-| POST | `/api/documents/validate-field` | `api-vercel/documents/validate-field.ts` | Validar CURP/RFC/etc |
-| GET | `/api/documents/supported-types` | `api-vercel/documents/supported-types.ts` | Listar tipos |
+| Método | Ruta | Archivo | Descripción |
+|--------|------|---------|-------------|
+| GET | `/api/health` | `api/health.ts` | Health check (sin auth) |
+| POST | `/api/documents/analyze-base64` | `api/documents/analyze-base64.ts` | Analizar documento |
+| POST | `/api/documents/validate-field` | `api/documents/validate-field.ts` | Validar CURP/RFC/etc |
+| GET | `/api/documents/supported-types` | `api/documents/supported-types.ts` | Listar tipos |
 
 ---
 
@@ -136,7 +94,6 @@ Los imports usan rutas relativas correctas:
 ### Paso 1: Instalar dependencias localmente
 
 ```bash
-cd partrunner-docval-ai
 npm install
 ```
 
@@ -266,7 +223,7 @@ GPT-4o Vision puede tardar 10-30 segundos. El `maxDuration: 60` está configurad
 
 ### CORS Error en Frontend
 
-El middleware CORS ya está configurado. Si persiste, verifica que tu dominio esté en la lista de `ALLOWED_ORIGINS` en `api-vercel/_lib/cors.ts`.
+El middleware CORS ya está configurado. Si persiste, verifica que tu dominio esté en la lista de `ALLOWED_ORIGINS` en `api/_lib/cors.ts`.
 
 ---
 
@@ -284,7 +241,7 @@ El middleware CORS ya está configurado. Si persiste, verifica que tu dominio es
 
 ---
 
-## 💻 Ejemplo de Uso para tu Equipo
+## 💻 Ejemplo de Uso
 
 ```javascript
 const DOCVAL_API = 'https://tu-proyecto.vercel.app/api';

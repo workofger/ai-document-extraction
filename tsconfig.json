@@ -32,5 +32,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*", "src/vite-env.d.ts", "vite.config.ts"],
-  "exclude": ["node_modules", "dist", "api-vercel"]
+  "exclude": ["node_modules", "dist", "api", "api-express"]
 }
