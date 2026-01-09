@@ -3,11 +3,6 @@ import { cors } from '../lib/cors.js';
 import { validateApiKey } from '../lib/auth.js';
 import { analyzeDocument } from '../lib/documentService.js';
 
-/**
- * Vercel Serverless Function Configuration
- * - Disable default body parser to handle multipart/form-data
- * - Extended timeout for GPT-4o Vision processing
- */
 export const config = {
   api: {
     bodyParser: false,
@@ -18,20 +13,13 @@ export const config = {
 /**
  * POST /api/documents/analyze
  * 
- * Analyze a document image (JPG, PNG, WebP, GIF) using GPT-4o Vision
- * Accepts both multipart/form-data (file upload) and JSON (base64)
+ * Analyze a document image using GPT-4o Vision
+ * Automatically detects document type (INE, Licencia, RFC, etc.)
  * 
- * Option 1 - File Upload (multipart/form-data):
- *   Headers:
- *     X-API-Key: Your API key (required)
- *     Content-Type: multipart/form-data
- *   
- *   Form Fields:
- *     file: Image file (JPG, PNG, WebP, GIF) - required
- *     documentType: "INE" | "auto" (optional, default: "auto")
- * 
- * Option 2 - JSON (application/json):
- *   Same as /api/documents/analyze-base64
+ * Accepts:
+ * - URL: { "url": "https://..." }
+ * - Base64: { "document": "data:image/jpeg;base64,..." }
+ * - File upload: multipart/form-data
  * 
  * Response:
  *   {
@@ -46,10 +34,8 @@ export const config = {
  *   }
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Handle CORS preflight
   if (cors(req, res)) return;
 
-  // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ 
       success: false, 
@@ -58,7 +44,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  // Validate API key
   const auth = validateApiKey(req, res);
   if (!auth.success) return;
 
@@ -82,7 +67,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // Validate file type
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
       if (!allowedTypes.includes(parsed.file.mimeType)) {
         return res.status(400).json({
@@ -93,54 +77,98 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // Convert to base64 data URL
       const base64 = parsed.file.buffer.toString('base64');
       dataUrl = `data:${parsed.file.mimeType};base64,${base64}`;
       documentType = parsed.fields.documentType || 'auto';
       fileSizeKB = Math.round(parsed.file.buffer.length / 1024);
 
     } else if (contentType.includes('application/json')) {
-      // Handle JSON body (base64)
       const body = await parseJsonBody(req);
       
-      if (!body.document) {
+      // Option 1: URL provided - download the image
+      if (body.url && typeof body.url === 'string') {
+        const urlStr = body.url as string;
+        
+        if (!urlStr.startsWith('http://') && !urlStr.startsWith('https://')) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid URL format',
+            code: 'INVALID_URL',
+            hint: 'URL must start with http:// or https://'
+          });
+        }
+
+        console.log(`[${auth.apiKeyId}] Downloading image from URL: ${urlStr.substring(0, 50)}...`);
+        
+        const imageResponse = await fetch(urlStr);
+        
+        if (!imageResponse.ok) {
+          return res.status(400).json({
+            success: false,
+            error: `Failed to download image: ${imageResponse.status} ${imageResponse.statusText}`,
+            code: 'DOWNLOAD_ERROR'
+          });
+        }
+
+        const contentTypeHeader = imageResponse.headers.get('content-type') || 'image/jpeg';
+        const mimeType = contentTypeHeader.split(';')[0].trim();
+        
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+        if (!allowedTypes.includes(mimeType)) {
+          return res.status(400).json({
+            success: false,
+            error: `Invalid image type from URL: ${mimeType}`,
+            code: 'INVALID_IMAGE_TYPE',
+            allowedTypes
+          });
+        }
+
+        const arrayBuffer = await imageResponse.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const base64 = buffer.toString('base64');
+        
+        dataUrl = `data:${mimeType};base64,${base64}`;
+        documentType = (body.documentType as string) || 'auto';
+        fileSizeKB = Math.round(buffer.length / 1024);
+      }
+      // Option 2: Base64/Data URL provided
+      else if (body.document && typeof body.document === 'string') {
+        const doc = body.document as string;
+        
+        if (doc.startsWith('data:')) {
+          dataUrl = doc;
+        } else {
+          const mimeType = (body.mimeType as string) || detectMimeType(doc) || 'image/png';
+          dataUrl = `data:${mimeType};base64,${doc}`;
+        }
+        
+        documentType = (body.documentType as string) || 'auto';
+        fileSizeKB = Math.round(doc.length / 1024);
+      }
+      else {
         return res.status(400).json({
           success: false,
           error: 'No document provided',
           code: 'MISSING_DOCUMENT',
-          hint: 'Send base64 encoded document in the "document" field or use multipart/form-data'
+          hint: 'Send "url" with image URL, or "document" with base64 data'
         });
       }
-
-      if (body.document.startsWith('data:')) {
-        dataUrl = body.document;
-      } else {
-        const mimeType = body.mimeType || detectMimeType(body.document) || 'image/png';
-        dataUrl = `data:${mimeType};base64,${body.document}`;
-      }
-      
-      documentType = body.documentType || 'auto';
-      fileSizeKB = Math.round(body.document.length / 1024);
 
     } else {
       return res.status(400).json({
         success: false,
         error: 'Invalid Content-Type',
         code: 'INVALID_CONTENT_TYPE',
-        hint: 'Use multipart/form-data for file upload or application/json for base64'
+        hint: 'Use application/json with "url" or "document" field, or multipart/form-data for file upload'
       });
     }
 
-    // Log request
     console.log(`[${auth.apiKeyId}] Analyzing document - type: ${documentType}, size: ${fileSizeKB}KB`);
 
-    // Call GPT-4o Vision
     const result = await analyzeDocument(dataUrl, documentType);
 
-    // Log result
     console.log(`[${auth.apiKeyId}] Result: ${result.isValid ? 'VALID' : 'INVALID'} - ${result.detectedType} (${result.processingTime}ms)`);
 
-    // Return success response
     res.status(200).json({
       success: true,
       data: result,
@@ -265,21 +293,18 @@ function parseMultipart(buffer: Buffer, boundary: string): Array<{
     const partEnd = nextBoundary === -1 ? buffer.length : nextBoundary;
     const partBuffer = buffer.slice(start + boundaryBuffer.length, partEnd);
     
-    // Find header/body separator (double CRLF)
     const headerEnd = partBuffer.indexOf('\r\n\r\n');
     if (headerEnd !== -1) {
       const headerStr = partBuffer.slice(0, headerEnd).toString('utf-8');
       const bodyStart = headerEnd + 4;
       let bodyEnd = partBuffer.length;
       
-      // Remove trailing CRLF
       if (partBuffer[bodyEnd - 2] === 0x0d && partBuffer[bodyEnd - 1] === 0x0a) {
         bodyEnd -= 2;
       }
       
       const data = partBuffer.slice(bodyStart, bodyEnd);
       
-      // Parse headers
       const nameMatch = headerStr.match(/name="([^"]+)"/);
       const filenameMatch = headerStr.match(/filename="([^"]+)"/);
       const contentTypeMatch = headerStr.match(/Content-Type:\s*([^\r\n]+)/i);
@@ -312,4 +337,3 @@ function detectMimeType(base64: string): string | null {
   
   return null;
 }
-

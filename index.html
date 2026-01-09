@@ -361,10 +361,45 @@
     </section>
 
     <section>
-      <h2>Analizar Imagen (File Upload)</h2>
+      <h2>Analizar con URL (Recomendado)</h2>
       <div class="card">
         <p style="margin-bottom: 1rem; color: var(--text-muted);">
-          Sube directamente archivos JPG, PNG, WebP o GIF sin convertir a base64.
+          Envía solo la URL de la imagen. La API descarga y analiza automáticamente.
+        </p>
+        <div class="code-header">
+          <span class="code-label">Request</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -H <span class="str">"X-API-Key: tu-api-key"</span> \
+  -d <span class="str">'{"url": "https://ejemplo.com/documento.jpg"}'</span></code></pre>
+      </div>
+      
+      <div class="card">
+        <div class="code-header">
+          <span class="code-label">Response</span>
+        </div>
+        <pre><code>{
+  <span class="key">"success"</span>: <span class="bool">true</span>,
+  <span class="key">"data"</span>: {
+    <span class="key">"isValid"</span>: <span class="bool">true</span>,
+    <span class="key">"detectedType"</span>: <span class="str">"INE"</span>,
+    <span class="key">"confidence"</span>: <span class="num">0.92</span>,
+    <span class="key">"extractedData"</span>: {
+      <span class="key">"nombre"</span>: <span class="str">"Juan Pérez García"</span>,
+      <span class="key">"curp"</span>: <span class="str">"PEGJ850101HDFRRL09"</span>
+    }
+  }
+}</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>Analizar con File Upload</h2>
+      <div class="card">
+        <p style="margin-bottom: 1rem; color: var(--text-muted);">
+          Sube directamente archivos JPG, PNG, WebP o GIF.
         </p>
         <div class="code-header">
           <span class="code-label">Request (multipart/form-data)</span>
@@ -372,8 +407,7 @@
         </div>
         <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
   -H <span class="str">"X-API-Key: tu-api-key"</span> \
-  -F <span class="str">"file=@documento.jpg"</span> \
-  -F <span class="str">"documentType=INE"</span></code></pre>
+  -F <span class="str">"file=@documento.jpg"</span></code></pre>
       </div>
       
       <div class="card">
