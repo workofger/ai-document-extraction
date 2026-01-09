@@ -409,6 +409,45 @@
     .cn { color: #ffd3a5; }
     .cb { color: #c9b1ff; }
 
+    /* Response Tabs */
+    .response-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--surface-border);
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-secondary);
+    }
+
+    .tab-btn.active {
+      background: var(--yellow);
+      color: #000;
+      border-color: var(--yellow);
+    }
+
+    .response-content {
+      display: none;
+    }
+
+    .response-content.active {
+      display: block;
+    }
+
     /* Endpoints */
     .endpoints-list {
       display: flex;
@@ -695,28 +734,210 @@
   -F <span class="cs">"file=@documento.jpg"</span></pre>
             </div>
 
-            <h4>Response</h4>
-            <div class="code-block">
-              <div class="code-header">
-                <span class="code-dot red"></span>
-                <span class="code-dot yellow"></span>
-                <span class="code-dot green"></span>
-                <span class="code-title">response.json</span>
-              </div>
-              <pre>{
+            <h4>Response by Document Type</h4>
+            <div class="response-tabs">
+              <button class="tab-btn active" onclick="showResponse('ine')">INE</button>
+              <button class="tab-btn" onclick="showResponse('licencia')">License</button>
+              <button class="tab-btn" onclick="showResponse('rfc')">RFC</button>
+              <button class="tab-btn" onclick="showResponse('circulacion')">Vehicle</button>
+              <button class="tab-btn" onclick="showResponse('poliza')">Insurance</button>
+              <button class="tab-btn" onclick="showResponse('banco')">Bank</button>
+            </div>
+            
+            <div id="response-ine" class="response-content active">
+              <div class="code-block">
+                <div class="code-header">
+                  <span class="code-dot red"></span>
+                  <span class="code-dot yellow"></span>
+                  <span class="code-dot green"></span>
+                  <span class="code-title">INE / IFE Response</span>
+                </div>
+                <pre>{
   <span class="ck">"success"</span>: <span class="cb">true</span>,
   <span class="ck">"data"</span>: {
     <span class="ck">"isValid"</span>: <span class="cb">true</span>,
     <span class="ck">"detectedType"</span>: <span class="cs">"INE"</span>,
+    <span class="ck">"matchesExpected"</span>: <span class="cb">true</span>,
+    <span class="ck">"reason"</span>: <span class="cs">"Valid document. 2 OCR corrections applied."</span>,
     <span class="ck">"confidence"</span>: <span class="cn">0.94</span>,
     <span class="ck">"extractedData"</span>: {
-      <span class="ck">"nombre"</span>: <span class="cs">"Juan Pérez"</span>,
-      <span class="ck">"curp"</span>: <span class="cs">"PEGJ850101HDFRRL09"</span>
+      <span class="ck">"nombre"</span>: <span class="cs">"Juan Pérez García"</span>,
+      <span class="ck">"curp"</span>: <span class="cs">"PEGJ850101HDFRRL09"</span>,
+      <span class="ck">"claveElector"</span>: <span class="cs">"PRGRJN85010109H800"</span>,
+      <span class="ck">"direccion"</span>: <span class="cs">"Calle Reforma 123, Col Centro"</span>,
+      <span class="ck">"codigoPostal"</span>: <span class="cs">"06600"</span>,
+      <span class="ck">"vigencia"</span>: <span class="cs">"2029"</span>,
+      <span class="ck">"folio"</span>: <span class="cs">"1234567890123"</span>
     },
     <span class="ck">"ocrEngine"</span>: <span class="cs">"hybrid"</span>,
+    <span class="ck">"visionConfidence"</span>: <span class="cn">0.97</span>,
+    <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
+    <span class="ck">"ocrCorrections"</span>: [<span class="cs">"Position 4: O → 0"</span>],
+    <span class="ck">"illegibleFields"</span>: [],
+    <span class="ck">"timestamp"</span>: <span class="cs">"2026-01-08T20:30:00.000Z"</span>,
     <span class="ck">"processingTime"</span>: <span class="cn">1850</span>
   }
 }</pre>
+              </div>
+            </div>
+
+            <div id="response-licencia" class="response-content">
+              <div class="code-block">
+                <div class="code-header">
+                  <span class="code-dot red"></span>
+                  <span class="code-dot yellow"></span>
+                  <span class="code-dot green"></span>
+                  <span class="code-title">Driver's License Response</span>
+                </div>
+                <pre>{
+  <span class="ck">"success"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"isValid"</span>: <span class="cb">true</span>,
+    <span class="ck">"detectedType"</span>: <span class="cs">"Licencia de Conducir"</span>,
+    <span class="ck">"confidence"</span>: <span class="cn">0.91</span>,
+    <span class="ck">"extractedData"</span>: {
+      <span class="ck">"nombre"</span>: <span class="cs">"María López Hernández"</span>,
+      <span class="ck">"curp"</span>: <span class="cs">"LOHM900515MDFRPR01"</span>,
+      <span class="ck">"numeroLicencia"</span>: <span class="cs">"A123456789"</span>,
+      <span class="ck">"tipoLicencia"</span>: <span class="cs">"Tipo A - Automovilista"</span>,
+      <span class="ck">"vigencia"</span>: <span class="cs">"2025-05-15"</span>,
+      <span class="ck">"vigenciaFin"</span>: <span class="cs">"2028-05-15"</span>,
+      <span class="ck">"direccion"</span>: <span class="cs">"Av. Insurgentes 456"</span>,
+      <span class="ck">"codigoPostal"</span>: <span class="cs">"03100"</span>
+    },
+    <span class="ck">"ocrEngine"</span>: <span class="cs">"hybrid"</span>,
+    <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
+    <span class="ck">"processingTime"</span>: <span class="cn">1720</span>
+  }
+}</pre>
+              </div>
+            </div>
+
+            <div id="response-rfc" class="response-content">
+              <div class="code-block">
+                <div class="code-header">
+                  <span class="code-dot red"></span>
+                  <span class="code-dot yellow"></span>
+                  <span class="code-dot green"></span>
+                  <span class="code-title">RFC Certificate Response</span>
+                </div>
+                <pre>{
+  <span class="ck">"success"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"isValid"</span>: <span class="cb">true</span>,
+    <span class="ck">"detectedType"</span>: <span class="cs">"Constancia de Situación Fiscal"</span>,
+    <span class="ck">"confidence"</span>: <span class="cn">0.96</span>,
+    <span class="ck">"extractedData"</span>: {
+      <span class="ck">"nombre"</span>: <span class="cs">"Juan Pérez García"</span>,
+      <span class="ck">"rfc"</span>: <span class="cs">"PEGJ850101ABC"</span>,
+      <span class="ck">"curp"</span>: <span class="cs">"PEGJ850101HDFRRL09"</span>,
+      <span class="ck">"razonSocial"</span>: <span class="cs">"Persona Física"</span>,
+      <span class="ck">"direccion"</span>: <span class="cs">"Calle Reforma 123, Col Centro, CDMX"</span>,
+      <span class="ck">"codigoPostal"</span>: <span class="cs">"06600"</span>,
+      <span class="ck">"email"</span>: <span class="cs">"juan.perez@email.com"</span>,
+      <span class="ck">"telefono"</span>: <span class="cs">"5551234567"</span>
+    },
+    <span class="ck">"ocrEngine"</span>: <span class="cs">"hybrid"</span>,
+    <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
+    <span class="ck">"processingTime"</span>: <span class="cn">1650</span>
+  }
+}</pre>
+              </div>
+            </div>
+
+            <div id="response-circulacion" class="response-content">
+              <div class="code-block">
+                <div class="code-header">
+                  <span class="code-dot red"></span>
+                  <span class="code-dot yellow"></span>
+                  <span class="code-dot green"></span>
+                  <span class="code-title">Vehicle Registration Response</span>
+                </div>
+                <pre>{
+  <span class="ck">"success"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"isValid"</span>: <span class="cb">true</span>,
+    <span class="ck">"detectedType"</span>: <span class="cs">"Tarjeta de Circulación"</span>,
+    <span class="ck">"confidence"</span>: <span class="cn">0.93</span>,
+    <span class="ck">"extractedData"</span>: {
+      <span class="ck">"nombre"</span>: <span class="cs">"Juan Pérez García"</span>,
+      <span class="ck">"placas"</span>: <span class="cs">"ABC-123-A"</span>,
+      <span class="ck">"vin"</span>: <span class="cs">"1HGBH41JXMN109186"</span>,
+      <span class="ck">"marca"</span>: <span class="cs">"Honda"</span>,
+      <span class="ck">"modelo"</span>: <span class="cs">"Civic"</span>,
+      <span class="ck">"anio"</span>: <span class="cs">"2022"</span>,
+      <span class="ck">"vigencia"</span>: <span class="cs">"2026-12-31"</span>,
+      <span class="ck">"folio"</span>: <span class="cs">"TC-2022-123456"</span>
+    },
+    <span class="ck">"ocrEngine"</span>: <span class="cs">"hybrid"</span>,
+    <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
+    <span class="ck">"processingTime"</span>: <span class="cn">1890</span>
+  }
+}</pre>
+              </div>
+            </div>
+
+            <div id="response-poliza" class="response-content">
+              <div class="code-block">
+                <div class="code-header">
+                  <span class="code-dot red"></span>
+                  <span class="code-dot yellow"></span>
+                  <span class="code-dot green"></span>
+                  <span class="code-title">Insurance Policy Response</span>
+                </div>
+                <pre>{
+  <span class="ck">"success"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"isValid"</span>: <span class="cb">true</span>,
+    <span class="ck">"detectedType"</span>: <span class="cs">"Póliza de Seguro"</span>,
+    <span class="ck">"confidence"</span>: <span class="cn">0.89</span>,
+    <span class="ck">"extractedData"</span>: {
+      <span class="ck">"nombre"</span>: <span class="cs">"Juan Pérez García"</span>,
+      <span class="ck">"aseguradora"</span>: <span class="cs">"Qualitas"</span>,
+      <span class="ck">"poliza"</span>: <span class="cs">"POL-2024-789456"</span>,
+      <span class="ck">"placas"</span>: <span class="cs">"ABC-123-A"</span>,
+      <span class="ck">"vin"</span>: <span class="cs">"1HGBH41JXMN109186"</span>,
+      <span class="ck">"marca"</span>: <span class="cs">"Honda"</span>,
+      <span class="ck">"modelo"</span>: <span class="cs">"Civic"</span>,
+      <span class="ck">"vigencia"</span>: <span class="cs">"2024-01-01"</span>,
+      <span class="ck">"vigenciaFin"</span>: <span class="cs">"2025-01-01"</span>
+    },
+    <span class="ck">"ocrEngine"</span>: <span class="cs">"hybrid"</span>,
+    <span class="ck">"imageQuality"</span>: <span class="cs">"regular"</span>,
+    <span class="ck">"processingTime"</span>: <span class="cn">2100</span>
+  }
+}</pre>
+              </div>
+            </div>
+
+            <div id="response-banco" class="response-content">
+              <div class="code-block">
+                <div class="code-header">
+                  <span class="code-dot red"></span>
+                  <span class="code-dot yellow"></span>
+                  <span class="code-dot green"></span>
+                  <span class="code-title">Bank Statement Response</span>
+                </div>
+                <pre>{
+  <span class="ck">"success"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"isValid"</span>: <span class="cb">true</span>,
+    <span class="ck">"detectedType"</span>: <span class="cs">"Carátula Bancaria"</span>,
+    <span class="ck">"confidence"</span>: <span class="cn">0.92</span>,
+    <span class="ck">"extractedData"</span>: {
+      <span class="ck">"nombre"</span>: <span class="cs">"Juan Pérez García"</span>,
+      <span class="ck">"banco"</span>: <span class="cs">"BBVA"</span>,
+      <span class="ck">"clabe"</span>: <span class="cs">"012180001234567890"</span>,
+      <span class="ck">"numeroCuenta"</span>: <span class="cs">"1234567890"</span>,
+      <span class="ck">"rfc"</span>: <span class="cs">"PEGJ850101ABC"</span>,
+      <span class="ck">"direccion"</span>: <span class="cs">"Calle Reforma 123"</span>
+    },
+    <span class="ck">"ocrEngine"</span>: <span class="cs">"hybrid"</span>,
+    <span class="ck">"imageQuality"</span>: <span class="cs">"buena"</span>,
+    <span class="ck">"processingTime"</span>: <span class="cn">1780</span>
+  }
+}</pre>
+              </div>
             </div>
           </div>
 
@@ -810,6 +1031,23 @@
         PartRunner Engineering · Internal Use Only
       </footer>
     </div>
-  </div>
+</div>
+
+  <script>
+    function showResponse(type) {
+      // Hide all response contents
+      document.querySelectorAll('.response-content').forEach(el => {
+        el.classList.remove('active');
+      });
+      // Remove active from all tabs
+      document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('active');
+      });
+      // Show selected response
+      document.getElementById('response-' + type).classList.add('active');
+      // Mark tab as active
+      event.target.classList.add('active');
+    }
+  </script>
   </body>
 </html>
