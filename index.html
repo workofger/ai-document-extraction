@@ -665,7 +665,8 @@
           <!-- Analyze -->
           <div class="api-block">
             <h3>📄 POST /api/documents/analyze</h3>
-            <p>Main endpoint. Accepts URL, file upload, or base64.</p>
+            <p>Main endpoint. Accepts URL, file upload, or base64.<br>
+            <strong>Formats:</strong> JPEG, PNG, WebP, GIF only.</p>
             
             <h4>Image URL</h4>
             <div class="code-block">
@@ -754,7 +755,7 @@
               <div class="endpoint-row">
                 <span class="method post">POST</span>
                 <code>/api/documents/analyze-base64</code>
-                <span class="desc">Legacy endpoint</span>
+                <span class="desc">Legacy (base64 only, same formats)</span>
               </div>
             </div>
           </div>
@@ -794,6 +795,7 @@
           <div class="api-block">
             <h3>⚠️ Notes</h3>
             <ul class="notes-list">
+              <li><strong>Supported formats:</strong> JPEG, PNG, WebP, GIF only (no PDF)</li>
               <li>Illegible fields are marked with <code>***</code></li>
               <li>Documents with 3+ illegible fields: <code>isValid: false</code></li>
               <li>OCR corrections logged in <code>ocrCorrections</code></li>
