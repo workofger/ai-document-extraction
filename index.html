@@ -690,7 +690,7 @@
                 </p>
                 <p class="endpoint-formats">
                   <strong>Accepts:</strong> Image URL, file upload (multipart), or base64<br>
-                  <strong>Formats:</strong> JPEG, PNG, WebP, GIF (no PDF)
+                  <strong>Formats:</strong> JPEG, PNG, WebP, GIF, PDF
                 </p>
 
                 <div class="request-options">
@@ -876,7 +876,7 @@
               <strong>⚠️ Data Integrity:</strong> The API never invents data. Illegible characters are marked with <code>*</code> and completely unreadable fields with <code>***</code>.<br><br>
               <strong>📋 Rejection:</strong> Documents with 3+ illegible fields or poor image quality are rejected (<code>isValid: false</code>).<br><br>
               <strong>🔧 Auto-correction:</strong> Common OCR errors (O→0, I→1) are automatically corrected and logged in <code>ocrCorrections</code>.<br><br>
-              <strong>📷 Formats:</strong> JPEG, PNG, WebP, GIF only. No PDF support.
+              <strong>📷 Formats:</strong> JPEG, PNG, WebP, GIF, and PDF (first page extracted for multi-page PDFs).
             </div>
           </section>
         </div>

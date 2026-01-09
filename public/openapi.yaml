@@ -93,7 +93,7 @@ paths:
       description: |
         Main endpoint for document analysis. Accepts images via URL, file upload, or base64.
         
-        **Supported formats:** JPEG, PNG, WebP, GIF (no PDF)
+        **Supported formats:** JPEG, PNG, WebP, GIF, PDF (first page extracted for multi-page PDFs)
         
         **Document type detection:** If not specified, the API automatically detects the document type.
         
@@ -383,7 +383,7 @@ components:
         file:
           type: string
           format: binary
-          description: Image file (JPEG, PNG, WebP, or GIF)
+          description: Image file (JPEG, PNG, WebP, GIF) or PDF document
         documentType:
           type: string
           description: Expected document type (optional)
@@ -520,6 +520,12 @@ components:
           type: integer
           description: Processing time in milliseconds
           example: 1850
+        originalFormat:
+          type: string
+          enum:
+            - image
+            - pdf
+          description: Original file format (PDF files are converted to images for processing)
 
     ValidateFieldResponse:
       type: object
@@ -592,7 +598,14 @@ components:
               summary: Invalid format
               value:
                 success: false
-                error: "Unsupported image format. Use JPEG, PNG, WebP, or GIF."
+                error: "Unsupported file format. Use JPEG, PNG, WebP, GIF, or PDF."
+            pdf_error:
+              summary: PDF processing error
+              value:
+                success: false
+                error: "Failed to process PDF: Could not extract page"
+                code: "PDF_PROCESSING_ERROR"
+                hint: "Try with a clearer PDF or use an image instead"
 
     Unauthorized:
       description: Missing or invalid API key

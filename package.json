@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "openai": "^4.77.0",
+    "pdf-to-img": "^5.0.0",
     "yaml": "^2.8.2"
   },
   "devDependencies": {

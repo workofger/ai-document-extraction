@@ -10,16 +10,21 @@ export const config = {
   maxDuration: 60,
 };
 
+// Supported file types
+const IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+const PDF_TYPES = ['application/pdf'];
+const ALL_ALLOWED_TYPES = [...IMAGE_TYPES, ...PDF_TYPES];
+
 /**
  * POST /api/documents/analyze
  * 
- * Analyze a document image using GPT-4o Vision
+ * Analyze a document image or PDF using GPT-4o Vision
  * Automatically detects document type (INE, Licencia, RFC, etc.)
  * 
  * Accepts:
  * - URL: { "url": "https://..." }
- * - Base64: { "document": "data:image/jpeg;base64,..." }
- * - File upload: multipart/form-data
+ * - Base64: { "document": "data:image/jpeg;base64,..." } or { "document": "data:application/pdf;base64,..." }
+ * - File upload: multipart/form-data (images or PDF)
  * 
  * Response:
  *   {
@@ -53,6 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let dataUrl: string;
     let documentType: string = 'auto';
     let fileSizeKB: number = 0;
+    let originalFormat: string = 'image';
 
     if (contentType.includes('multipart/form-data')) {
       // Handle file upload
@@ -63,29 +69,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           success: false,
           error: 'No file provided',
           code: 'MISSING_FILE',
-          hint: 'Send an image file in the "file" field'
+          hint: 'Send an image or PDF file in the "file" field'
         });
       }
 
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-      if (!allowedTypes.includes(parsed.file.mimeType)) {
+      if (!ALL_ALLOWED_TYPES.includes(parsed.file.mimeType)) {
         return res.status(400).json({
           success: false,
           error: `Invalid file type: ${parsed.file.mimeType}`,
           code: 'INVALID_FILE_TYPE',
-          allowedTypes
+          allowedTypes: ALL_ALLOWED_TYPES
         });
       }
 
-      const base64 = parsed.file.buffer.toString('base64');
-      dataUrl = `data:${parsed.file.mimeType};base64,${base64}`;
-      documentType = parsed.fields.documentType || 'auto';
       fileSizeKB = Math.round(parsed.file.buffer.length / 1024);
+      documentType = parsed.fields.documentType || 'auto';
+
+      // If PDF, convert to image
+      if (PDF_TYPES.includes(parsed.file.mimeType)) {
+        console.log(`[${auth.apiKeyId}] Converting PDF to image...`);
+        originalFormat = 'pdf';
+        dataUrl = await convertPdfToImage(parsed.file.buffer);
+      } else {
+        const base64 = parsed.file.buffer.toString('base64');
+        dataUrl = `data:${parsed.file.mimeType};base64,${base64}`;
+      }
 
     } else if (contentType.includes('application/json')) {
       const body = await parseJsonBody(req);
       
-      // Option 1: URL provided - download the image
+      // Option 1: URL provided - download the image/PDF
       if (body.url && typeof body.url === 'string') {
         const urlStr = body.url as string;
         
@@ -98,14 +111,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           });
         }
 
-        console.log(`[${auth.apiKeyId}] Downloading image from URL: ${urlStr.substring(0, 50)}...`);
+        console.log(`[${auth.apiKeyId}] Downloading file from URL: ${urlStr.substring(0, 50)}...`);
         
         const imageResponse = await fetch(urlStr);
         
         if (!imageResponse.ok) {
           return res.status(400).json({
             success: false,
-            error: `Failed to download image: ${imageResponse.status} ${imageResponse.statusText}`,
+            error: `Failed to download file: ${imageResponse.status} ${imageResponse.statusText}`,
             code: 'DOWNLOAD_ERROR'
           });
         }
@@ -113,44 +126,83 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const contentTypeHeader = imageResponse.headers.get('content-type') || 'image/jpeg';
         const mimeType = contentTypeHeader.split(';')[0].trim();
         
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-        if (!allowedTypes.includes(mimeType)) {
+        // Also check file extension for PDFs
+        const isPdfUrl = urlStr.toLowerCase().endsWith('.pdf');
+        const effectiveMimeType = isPdfUrl ? 'application/pdf' : mimeType;
+        
+        if (!ALL_ALLOWED_TYPES.includes(effectiveMimeType)) {
           return res.status(400).json({
             success: false,
-            error: `Invalid image type from URL: ${mimeType}`,
-            code: 'INVALID_IMAGE_TYPE',
-            allowedTypes
+            error: `Invalid file type from URL: ${effectiveMimeType}`,
+            code: 'INVALID_FILE_TYPE',
+            allowedTypes: ALL_ALLOWED_TYPES
           });
         }
 
         const arrayBuffer = await imageResponse.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        const base64 = buffer.toString('base64');
-        
-        dataUrl = `data:${mimeType};base64,${base64}`;
-        documentType = (body.documentType as string) || 'auto';
         fileSizeKB = Math.round(buffer.length / 1024);
+        documentType = (body.documentType as string) || 'auto';
+
+        // If PDF, convert to image
+        if (PDF_TYPES.includes(effectiveMimeType) || isPdfUrl) {
+          console.log(`[${auth.apiKeyId}] Converting PDF from URL to image...`);
+          originalFormat = 'pdf';
+          dataUrl = await convertPdfToImage(buffer);
+        } else {
+          const base64 = buffer.toString('base64');
+          dataUrl = `data:${mimeType};base64,${base64}`;
+        }
       }
       // Option 2: Base64/Data URL provided
       else if (body.document && typeof body.document === 'string') {
         const doc = body.document as string;
         
+        let mimeType: string;
+        let rawBase64: string;
+        
         if (doc.startsWith('data:')) {
-          dataUrl = doc;
+          const match = doc.match(/^data:([^;]+);base64,(.+)$/);
+          if (match) {
+            mimeType = match[1];
+            rawBase64 = match[2];
+          } else {
+            mimeType = 'image/png';
+            rawBase64 = doc.split(',')[1] || doc;
+          }
         } else {
-          const mimeType = (body.mimeType as string) || detectMimeType(doc) || 'image/png';
-          dataUrl = `data:${mimeType};base64,${doc}`;
+          mimeType = (body.mimeType as string) || detectMimeType(doc) || 'image/png';
+          rawBase64 = doc;
         }
         
+        if (!ALL_ALLOWED_TYPES.includes(mimeType)) {
+          return res.status(400).json({
+            success: false,
+            error: `Invalid document type: ${mimeType}`,
+            code: 'INVALID_FILE_TYPE',
+            allowedTypes: ALL_ALLOWED_TYPES
+          });
+        }
+
+        fileSizeKB = Math.round(rawBase64.length / 1024);
         documentType = (body.documentType as string) || 'auto';
-        fileSizeKB = Math.round(doc.length / 1024);
+
+        // If PDF, convert to image
+        if (PDF_TYPES.includes(mimeType)) {
+          console.log(`[${auth.apiKeyId}] Converting PDF base64 to image...`);
+          originalFormat = 'pdf';
+          const pdfBuffer = Buffer.from(rawBase64, 'base64');
+          dataUrl = await convertPdfToImage(pdfBuffer);
+        } else {
+          dataUrl = `data:${mimeType};base64,${rawBase64}`;
+        }
       }
       else {
         return res.status(400).json({
           success: false,
           error: 'No document provided',
           code: 'MISSING_DOCUMENT',
-          hint: 'Send "url" with image URL, or "document" with base64 data'
+          hint: 'Send "url" with file URL, or "document" with base64 data'
         });
       }
 
@@ -163,7 +215,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    console.log(`[${auth.apiKeyId}] Analyzing document - type: ${documentType}, size: ${fileSizeKB}KB`);
+    console.log(`[${auth.apiKeyId}] Analyzing document - type: ${documentType}, size: ${fileSizeKB}KB, format: ${originalFormat}`);
 
     const result = await analyzeDocument(dataUrl, documentType);
 
@@ -176,6 +228,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         apiKeyId: auth.apiKeyId,
         analyzedAt: new Date().toISOString(),
         fileSizeKB,
+        originalFormat,
       }
     });
 
@@ -185,16 +238,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const message = error instanceof Error ? error.message : 'Analysis failed';
     const isConfigError = message.includes('OPENAI_API_KEY') || message.includes('configured');
     const isRateLimit = message.includes('rate') || message.includes('quota');
+    const isPdfError = message.includes('PDF') || message.includes('pdf');
     
-    const statusCode = isConfigError ? 503 : isRateLimit ? 429 : 500;
-    const code = isConfigError ? 'CONFIG_ERROR' : isRateLimit ? 'RATE_LIMIT' : 'ANALYSIS_ERROR';
+    const statusCode = isConfigError ? 503 : isRateLimit ? 429 : isPdfError ? 422 : 500;
+    const code = isConfigError ? 'CONFIG_ERROR' : isRateLimit ? 'RATE_LIMIT' : isPdfError ? 'PDF_PROCESSING_ERROR' : 'ANALYSIS_ERROR';
 
     res.status(statusCode).json({
       success: false,
       error: message,
       code,
-      hint: isRateLimit ? 'Please wait a moment before retrying' : undefined
+      hint: isRateLimit ? 'Please wait a moment before retrying' : isPdfError ? 'Try with a clearer PDF or use an image instead' : undefined
     });
+  }
+}
+
+/**
+ * Convert PDF buffer to image data URL (first page only)
+ */
+async function convertPdfToImage(pdfBuffer: Buffer): Promise<string> {
+  try {
+    // Dynamic import for pdf-to-img (ESM module)
+    const { pdf } = await import('pdf-to-img');
+    
+    // Convert PDF to images (generator function)
+    const document = await pdf(pdfBuffer, { scale: 2 }); // scale 2 for better quality
+    
+    // Get first page only (for document verification we typically need just the first page)
+    let firstPageImage: Buffer | null = null;
+    
+    for await (const image of document) {
+      firstPageImage = image;
+      break; // Only process first page
+    }
+    
+    if (!firstPageImage) {
+      throw new Error('Could not extract any page from PDF');
+    }
+    
+    // Convert to base64 data URL
+    const base64 = firstPageImage.toString('base64');
+    return `data:image/png;base64,${base64}`;
+    
+  } catch (error) {
+    console.error('PDF conversion error:', error);
+    throw new Error(`Failed to process PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
