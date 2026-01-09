@@ -1,193 +1,130 @@
-# Partrunner DocVal AI
+# DocVal API
 
-<div align="center">
-  <img src="public/favicon.svg" alt="DocVal AI Logo" width="80" height="80" />
-  
-  **Validación Automática de Documentos Logísticos con Inteligencia Artificial**
-  
-  [![React](https://img.shields.io/badge/React-18.3-blue.svg)](https://reactjs.org/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-  [![Gemini AI](https://img.shields.io/badge/Gemini-2.0-purple.svg)](https://ai.google.dev/)
-  [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-cyan.svg)](https://tailwindcss.com/)
-</div>
+API de validación de documentos mexicanos usando GPT-4o Vision.
 
----
+## 🚀 Endpoints
 
-## 🚀 Características
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/api/health` | Health check (sin auth) |
+| POST | `/api/documents/analyze-base64` | Analizar documento |
+| POST | `/api/documents/validate-field` | Validar CURP/RFC/CLABE/VIN |
+| GET | `/api/documents/supported-types` | Listar tipos soportados |
 
-- **Validación con IA**: Utiliza Gemini 2.0 Flash para analizar y validar documentos
-- **Múltiples roles**: Encargado, Conductor, Vehículo, Persona Moral, Persona Física
-- **Extracción de datos**: Extrae automáticamente información clave de documentos
-- **Persistencia local**: Guarda el progreso en localStorage
-- **UI moderna**: Diseño responsivo con Tailwind CSS
-- **Notificaciones**: Feedback en tiempo real con toast notifications
+## 🔐 Autenticación
 
-## 📋 Documentos Soportados
+Todas las rutas (excepto `/api/health`) requieren el header:
 
-| Tipo | Datos Extraídos |
-|------|-----------------|
-| INE | Nombre, CURP, Clave de Elector, Vigencia |
-| Licencia de Conducir | Nombre, Número, Tipo, Vigencia |
-| Tarjeta de Circulación | Placas, Modelo, VIN |
-| Constancia Fiscal | RFC, Nombre/Razón Social, CP |
-| Póliza de Seguro | Aseguradora, Póliza, Vigencia |
-| Datos Bancarios | Banco, CLABE, Nombre |
+```
+X-API-Key: tu-api-key
+```
 
-## 🛠️ Instalación
+## 📡 Uso
 
-### Prerrequisitos
-
-- Node.js 18+
-- npm o yarn
-- API Key de Gemini ([Obtener aquí](https://aistudio.google.com/app/apikey))
-
-### Pasos
-
-1. **Clonar el repositorio**
-   ```bash
-   git clone https://github.com/partrunner/docval-ai.git
-   cd docval-ai
-   ```
-
-2. **Instalar dependencias**
-   ```bash
-   npm install
-   ```
-
-3. **Configurar variables de entorno**
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Edita `.env.local` y agrega tu API Key:
-   ```env
-   GEMINI_API_KEY=tu_api_key_aqui
-   ```
-
-4. **Iniciar en desarrollo**
-   ```bash
-   npm run dev
-   ```
-
-5. **Abrir en el navegador**
-   ```
-   http://localhost:3000/doc_demo
-   ```
-
-## 🏗️ Build para Producción
+### Health Check
 
 ```bash
-# Generar build optimizado
-npm run build
-
-# Vista previa del build
-npm run preview
+curl https://ai-document-extraction.vercel.app/api/health
 ```
 
-Los archivos se generan en `dist/` listos para desplegar.
+### Analizar Documento
 
-## 📁 Estructura del Proyecto
+```bash
+curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze-base64 \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: tu-api-key" \
+  -d '{
+    "document": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+    "documentType": "INE"
+  }'
+```
+
+**Respuesta:**
+```json
+{
+  "success": true,
+  "data": {
+    "isValid": true,
+    "detectedType": "INE",
+    "confidence": 0.92,
+    "extractedData": {
+      "nombre": "Juan Pérez García",
+      "curp": "PEGJ850101HDFRRL09",
+      "claveElector": "PRGRJN85010109H800"
+    },
+    "processingTime": 2340
+  }
+}
+```
+
+### Validar Campo
+
+```bash
+curl -X POST https://ai-document-extraction.vercel.app/api/documents/validate-field \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: tu-api-key" \
+  -d '{"field": "curp", "value": "PEGJ85O1O1HDFRRL09"}'
+```
+
+**Respuesta:**
+```json
+{
+  "success": true,
+  "data": {
+    "field": "curp",
+    "originalValue": "PEGJ85O1O1HDFRRL09",
+    "valid": true,
+    "corrected": "PEGJ850101HDFRRL09",
+    "corrections": ["Position 4: O → 0", "Position 6: O → 0"]
+  }
+}
+```
+
+## 📋 Tipos de Documento Soportados
+
+- **INE** - Credencial para votar
+- **Licencia** - Licencia de conducir
+- **RFC** - Constancia de situación fiscal
+- **Tarjeta de Circulación** - Tarjeta vehicular
+- **Póliza de Seguro** - Póliza de seguro vehicular
+- **CLABE** - Datos bancarios
+
+## 🔧 Variables de Entorno
+
+| Variable | Descripción |
+|----------|-------------|
+| `OPENAI_API_KEY` | API Key de OpenAI |
+| `API_KEY` | Clave para autenticar consumidores |
+
+## 📁 Estructura
 
 ```
-partrunner-docval-ai/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── components/
-│   │   ├── documents/        # Componentes de documentos
-│   │   ├── layout/           # Header, Footer
-│   │   └── ui/               # Componentes base reutilizables
-│   ├── contexts/
-│   │   └── DocumentContext.tsx
-│   ├── hooks/
-│   │   ├── useAnalysis.ts
-│   │   └── useFileUpload.ts
-│   ├── services/
-│   │   └── geminiService.ts  # Integración con Gemini AI
-│   ├── types/
-│   │   └── index.ts
-│   ├── constants/
-│   │   └── index.ts
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css
-├── .env.local                # Variables de entorno (no commitear)
+docval-api/
+├── api/
+│   ├── lib/
+│   │   ├── auth.ts           # Autenticación X-API-Key
+│   │   ├── cors.ts           # Middleware CORS
+│   │   └── documentService.ts # Servicio GPT-4o Vision
+│   ├── documents/
+│   │   ├── analyze-base64.ts  # POST: Analizar documento
+│   │   ├── validate-field.ts  # POST: Validar campo
+│   │   └── supported-types.ts # GET: Tipos soportados
+│   ├── health.ts              # GET: Health check
+│   └── tsconfig.json
 ├── package.json
-├── tailwind.config.js
 ├── tsconfig.json
-└── vite.config.ts
+└── vercel.json
 ```
 
-## 🚢 Despliegue
+## 🚀 Deploy
 
-### En servidor propio (SFTP/SFT)
+El proyecto se despliega automáticamente en Vercel al hacer push a `main`.
 
-1. Genera el build:
-   ```bash
-   npm run build
-   ```
-
-2. Sube el contenido de `dist/` a tu servidor en:
-   ```
-   /var/www/products.partrunner.com/doc_demo/
-   ```
-
-3. Configura tu servidor web (nginx ejemplo):
-   ```nginx
-   location /doc_demo {
-       alias /var/www/products.partrunner.com/doc_demo;
-       try_files $uri $uri/ /doc_demo/index.html;
-   }
-   ```
-
-### Con Docker
-
-```dockerfile
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html/doc_demo
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+```bash
+# Deploy manual
+npx vercel --prod
 ```
-
-## ⚙️ Configuración
-
-| Variable | Descripción | Requerida |
-|----------|-------------|-----------|
-| `GEMINI_API_KEY` | API Key de Google Gemini | ✅ |
-| `VITE_APP_BASE_URL` | URL base de la app | ❌ |
-
-## 🔒 Seguridad
-
-> ⚠️ **Importante**: La API Key de Gemini se expone en el frontend. Para producción, considera:
-> 
-> 1. Crear un backend/proxy que maneje las llamadas a Gemini
-> 2. Usar Vercel/Netlify Functions o similar
-> 3. Implementar rate limiting y autenticación
-
-## 🤝 Contribuir
-
-1. Fork del repositorio
-2. Crea una rama (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit de cambios (`git commit -am 'Agrega nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Crea un Pull Request
-
-## 📄 Licencia
-
-MIT © [Partrunner](https://partrunner.com)
 
 ---
 
-<div align="center">
-  <strong>Desarrollado con ❤️ por Partrunner</strong>
-  <br />
-  <a href="https://products.partrunner.com">products.partrunner.com</a>
-</div>
+**Desarrollado por PartRunner**
