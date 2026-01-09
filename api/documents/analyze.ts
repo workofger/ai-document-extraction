@@ -257,26 +257,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
  */
 async function convertPdfToImage(pdfBuffer: Buffer): Promise<string> {
   try {
-    // Dynamic import for pdf-to-img (ESM module)
-    const { pdf } = await import('pdf-to-img');
+    // Dynamic import for pdf-to-png-converter
+    const { pdfToPng } = await import('pdf-to-png-converter');
     
-    // Convert PDF to images (generator function)
-    const document = await pdf(pdfBuffer, { scale: 2 }); // scale 2 for better quality
+    // Convert PDF to PNG images
+    const pngPages = await pdfToPng(pdfBuffer, {
+      disableFontFace: true,  // Better for serverless
+      useSystemFonts: false,  // Don't rely on system fonts
+      viewportScale: 2.0,     // Higher quality
+      pagesToProcess: [1],    // Only first page
+    });
     
-    // Get first page only (for document verification we typically need just the first page)
-    let firstPageImage: Buffer | null = null;
-    
-    for await (const image of document) {
-      firstPageImage = image;
-      break; // Only process first page
-    }
-    
-    if (!firstPageImage) {
+    if (!pngPages || pngPages.length === 0) {
       throw new Error('Could not extract any page from PDF');
     }
     
+    const firstPage = pngPages[0];
+    
+    if (!firstPage.content) {
+      throw new Error('PDF page has no content');
+    }
+    
     // Convert to base64 data URL
-    const base64 = firstPageImage.toString('base64');
+    const base64 = firstPage.content.toString('base64');
     return `data:image/png;base64,${base64}`;
     
   } catch (error) {
