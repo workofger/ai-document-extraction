@@ -8,119 +8,158 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --black: #0d0d0d;
-      --black-card: rgba(20, 20, 20, 0.8);
-      --black-elevated: rgba(30, 30, 30, 0.9);
-      
       --yellow: #FFD60A;
-      --yellow-bright: #FFE44D;
-      --yellow-dim: #B8960A;
-      --yellow-glow: rgba(255, 214, 10, 0.25);
+      --yellow-dim: #BFA008;
+      --yellow-glow: rgba(255, 214, 10, 0.3);
       
-      --white: #FFFFFF;
-      --white-95: rgba(255,255,255,0.95);
-      --white-80: rgba(255,255,255,0.8);
-      --white-60: rgba(255,255,255,0.6);
-      --white-40: rgba(255,255,255,0.4);
-      --white-15: rgba(255,255,255,0.15);
-      --white-08: rgba(255,255,255,0.08);
+      --surface: rgba(18, 18, 22, 0.92);
+      --surface-light: rgba(30, 30, 36, 0.85);
+      --surface-border: rgba(255, 255, 255, 0.08);
       
-      --gradient-yellow: linear-gradient(135deg, #FFD60A 0%, #FF9500 100%);
-      --gradient-gold: linear-gradient(135deg, #FFE44D 0%, #FFD60A 50%, #C9A800 100%);
+      --text-primary: #FFFFFF;
+      --text-secondary: rgba(255, 255, 255, 0.75);
+      --text-muted: rgba(255, 255, 255, 0.5);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: linear-gradient(165deg, 
-        #0d0d0d 0%, 
-        #1a1a1f 25%, 
-        #141418 50%, 
-        #1f1a14 75%, 
-        #0d0d0d 100%);
-      background-attachment: fixed;
-      color: var(--white);
-      line-height: 1.6;
-      min-height: 100vh;
+    html {
+      scroll-behavior: smooth;
     }
 
-    /* Subtle texture overlay */
-    body::before {
-      content: '';
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Parallax Background */
+    .parallax-bg {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
+      z-index: -1;
       background: 
-        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(255,214,10,0.04), transparent 50%),
-        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(255,149,0,0.03), transparent 50%);
-      pointer-events: none;
-      z-index: 0;
+        linear-gradient(
+          135deg,
+          #0a0a0c 0%,
+          #141419 20%,
+          #1a1510 40%,
+          #1f1a0d 55%,
+          #1a1612 70%,
+          #12100e 85%,
+          #0a0a0c 100%
+        );
+      background-size: 200% 200%;
+      animation: gradientShift 20s ease infinite;
     }
 
-    .container {
+    .parallax-bg::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(ellipse 100% 60% at 0% 0%, rgba(255, 214, 10, 0.08), transparent 50%),
+        radial-gradient(ellipse 80% 50% at 100% 100%, rgba(191, 160, 8, 0.06), transparent 50%),
+        radial-gradient(ellipse 50% 30% at 50% 50%, rgba(255, 200, 0, 0.03), transparent 40%);
+    }
+
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* Main Content Container */
+    .content-wrapper {
       position: relative;
       z-index: 1;
-      max-width: 1100px;
+      max-width: 1000px;
       margin: 0 auto;
-      padding: 0 2rem;
+      padding: 1.5rem;
     }
 
-    /* Navigation */
-    nav {
+    .main-container {
+      background: var(--surface);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid var(--surface-border);
+      border-radius: 24px;
+      box-shadow: 
+        0 4px 24px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1.5rem 0;
-      border-bottom: 1px solid var(--white-08);
+      padding: 1.25rem 2rem;
+      border-bottom: 1px solid var(--surface-border);
+      background: rgba(0, 0, 0, 0.2);
     }
 
-    .nav-logo img {
-      height: 32px;
+    .logo {
+      height: 28px;
+      display: block;
     }
 
-    .nav-badge {
+    .status-badge {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       font-size: 0.8rem;
-      color: var(--white-60);
-      background: var(--white-08);
-      padding: 0.4rem 0.8rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.4rem 0.75rem;
       border-radius: 6px;
     }
 
-    .nav-badge .dot {
+    .status-dot {
       width: 6px;
       height: 6px;
       background: #22c55e;
       border-radius: 50%;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    /* Content */
+    .content {
+      padding: 3rem 2.5rem;
     }
 
     /* Hero */
     .hero {
-      padding: 5rem 0 4rem;
+      margin-bottom: 3rem;
     }
 
     .hero-label {
       display: inline-block;
-      font-size: 0.75rem;
-      font-weight: 600;
+      font-size: 0.7rem;
+      font-weight: 700;
       color: var(--yellow);
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.15em;
       margin-bottom: 1rem;
+      background: rgba(255, 214, 10, 0.1);
+      padding: 0.4rem 0.75rem;
+      border-radius: 4px;
     }
 
     h1 {
-      font-size: clamp(2.25rem, 5vw, 3.5rem);
+      font-size: clamp(2rem, 4vw, 2.75rem);
       font-weight: 700;
-      line-height: 1.15;
-      margin-bottom: 1.25rem;
+      line-height: 1.2;
+      margin-bottom: 1rem;
       letter-spacing: -0.02em;
-      color: var(--white-95);
     }
 
     h1 .highlight {
@@ -128,11 +167,11 @@
     }
 
     .hero-description {
-      font-size: 1.1rem;
-      color: var(--white-60);
-      max-width: 600px;
-      line-height: 1.75;
-      margin-bottom: 2rem;
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      max-width: 550px;
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
     }
 
     .hero-meta {
@@ -142,11 +181,8 @@
     }
 
     .meta-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.9rem;
-      color: var(--white-60);
+      font-size: 0.875rem;
+      color: var(--text-muted);
     }
 
     .meta-item strong {
@@ -154,19 +190,19 @@
       font-weight: 600;
     }
 
-    /* Quick Stats */
-    .quick-stats {
+    /* Stats */
+    .stats-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
-      margin: 3rem 0;
+      gap: 1px;
+      background: var(--surface-border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 3rem;
     }
 
-    .stat-card {
-      background: var(--black-card);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--white-08);
-      border-radius: 12px;
+    .stat {
+      background: var(--surface-light);
       padding: 1.5rem;
       text-align: center;
     }
@@ -179,31 +215,31 @@
     }
 
     .stat-label {
-      font-size: 0.8rem;
-      color: var(--white-40);
+      font-size: 0.7rem;
+      color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.08em;
     }
 
     /* Section */
-    section {
-      margin: 4rem 0;
+    .section {
+      margin-bottom: 2.5rem;
     }
 
     .section-title {
-      font-size: 1.25rem;
+      font-size: 1rem;
       font-weight: 600;
-      color: var(--white-95);
-      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+      margin-bottom: 1.25rem;
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.6rem;
     }
 
     .section-title::before {
       content: '';
       width: 3px;
-      height: 1.25rem;
+      height: 1rem;
       background: var(--yellow);
       border-radius: 2px;
     }
@@ -211,140 +247,124 @@
     /* Pipeline */
     .pipeline {
       display: flex;
-      align-items: stretch;
-      gap: 0.5rem;
-      margin-bottom: 3rem;
+      align-items: center;
+      gap: 0.75rem;
     }
 
     .pipeline-step {
       flex: 1;
-      background: var(--black-card);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--white-08);
+      background: var(--surface-light);
+      border: 1px solid var(--surface-border);
       border-radius: 12px;
       padding: 1.25rem;
       text-align: center;
     }
 
-    .pipeline-step .num {
+    .pipeline-num {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       background: var(--yellow);
-      color: var(--black);
+      color: #000;
       font-weight: 700;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       border-radius: 6px;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.6rem;
     }
 
     .pipeline-step h4 {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 600;
-      color: var(--white-95);
-      margin-bottom: 0.25rem;
+      margin-bottom: 0.2rem;
     }
 
     .pipeline-step p {
-      font-size: 0.8rem;
-      color: var(--white-40);
+      font-size: 0.75rem;
+      color: var(--text-muted);
     }
 
     .pipeline-arrow {
-      display: flex;
-      align-items: center;
-      color: var(--white-15);
-      font-size: 1.25rem;
+      color: var(--text-muted);
+      font-size: 1rem;
     }
 
     /* Cards Grid */
     .cards-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 1rem;
+      gap: 0.75rem;
     }
 
     .card {
-      background: var(--black-card);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--white-08);
+      background: var(--surface-light);
+      border: 1px solid var(--surface-border);
       border-radius: 12px;
-      padding: 1.5rem;
-      transition: border-color 0.2s;
-    }
-
-    .card:hover {
-      border-color: var(--white-15);
+      padding: 1.25rem;
     }
 
     .card-icon {
-      font-size: 1.5rem;
-      margin-bottom: 0.75rem;
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
     }
 
     .card h4 {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 600;
-      color: var(--white-95);
-      margin-bottom: 0.375rem;
+      margin-bottom: 0.25rem;
     }
 
     .card p {
-      font-size: 0.85rem;
-      color: var(--white-40);
+      font-size: 0.8rem;
+      color: var(--text-muted);
       line-height: 1.5;
     }
 
-    /* API Reference */
+    /* API Block */
     .api-block {
-      background: var(--black-card);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--white-08);
+      background: var(--surface-light);
+      border: 1px solid var(--surface-border);
       border-radius: 14px;
-      padding: 1.75rem;
-      margin-bottom: 1.25rem;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
     }
 
     .api-block h3 {
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 600;
       color: var(--yellow);
       margin-bottom: 0.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
     }
 
     .api-block > p {
-      color: var(--white-60);
-      font-size: 0.9rem;
-      margin-bottom: 1.25rem;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
     }
 
     .api-block h4 {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: 600;
-      color: var(--white-40);
-      margin: 1.25rem 0 0.5rem;
+      color: var(--text-muted);
+      margin: 1rem 0 0.5rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
 
     .api-block code {
-      background: var(--white-08);
+      background: rgba(255, 214, 10, 0.1);
+      color: var(--yellow);
       padding: 0.15rem 0.4rem;
       border-radius: 4px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.8rem;
-      color: var(--white-80);
     }
 
-    /* Code blocks */
+    /* Code Block */
     .code-block {
-      background: rgba(0,0,0,0.4);
-      border: 1px solid var(--white-08);
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--surface-border);
       border-radius: 10px;
       overflow: hidden;
       margin-bottom: 0.75rem;
@@ -353,44 +373,43 @@
     .code-header {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
-      padding: 0.6rem 1rem;
-      background: rgba(0,0,0,0.3);
-      border-bottom: 1px solid var(--white-08);
+      gap: 0.35rem;
+      padding: 0.5rem 0.75rem;
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 1px solid var(--surface-border);
     }
 
     .code-dot {
-      width: 10px;
-      height: 10px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
     }
-
     .code-dot.red { background: #ff5f57; }
     .code-dot.yellow { background: #febc2e; }
     .code-dot.green { background: #28c840; }
 
     .code-title {
       margin-left: auto;
-      font-size: 0.7rem;
-      color: var(--white-40);
+      font-size: 0.65rem;
+      color: var(--text-muted);
       font-family: 'JetBrains Mono', monospace;
     }
 
     pre {
-      padding: 1rem 1.25rem;
+      padding: 1rem;
       overflow-x: auto;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       line-height: 1.7;
-      color: var(--white-80);
+      color: var(--text-secondary);
     }
 
-    .code-key { color: var(--yellow); }
-    .code-str { color: #a8e6cf; }
-    .code-num { color: #ffd3a5; }
-    .code-bool { color: #c9b1ff; }
+    .ck { color: var(--yellow); }
+    .cs { color: #a8e6cf; }
+    .cn { color: #ffd3a5; }
+    .cb { color: #c9b1ff; }
 
-    /* Endpoints table */
+    /* Endpoints */
     .endpoints-list {
       display: flex;
       flex-direction: column;
@@ -401,44 +420,36 @@
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.75rem 1rem;
-      background: rgba(0,0,0,0.3);
+      padding: 0.6rem 0.75rem;
+      background: rgba(0, 0, 0, 0.3);
       border-radius: 8px;
     }
 
     .method {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       font-weight: 700;
-      padding: 0.2rem 0.4rem;
+      padding: 0.2rem 0.35rem;
       border-radius: 4px;
-      min-width: 40px;
+      min-width: 36px;
       text-align: center;
     }
-
-    .method.get {
-      background: rgba(34, 197, 94, 0.2);
-      color: #4ade80;
-    }
-
-    .method.post {
-      background: rgba(255, 214, 10, 0.2);
-      color: var(--yellow);
-    }
+    .method.get { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+    .method.post { background: rgba(255, 214, 10, 0.2); color: var(--yellow); }
 
     .endpoint-row code {
       background: transparent;
-      color: var(--white-80);
-      font-weight: 500;
+      color: var(--text-primary);
+      font-size: 0.8rem;
     }
 
     .endpoint-row .desc {
-      color: var(--white-40);
-      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-size: 0.75rem;
       margin-left: auto;
     }
 
-    /* Fields grid */
+    /* Fields */
     .fields-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -448,359 +459,355 @@
     .field-item {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem 1rem;
-      background: rgba(0,0,0,0.3);
+      gap: 0.6rem;
+      padding: 0.6rem 0.75rem;
+      background: rgba(0, 0, 0, 0.3);
       border-radius: 8px;
     }
 
     .field-item code {
-      color: var(--yellow);
       background: transparent;
-      font-weight: 500;
-      min-width: 120px;
+      min-width: 110px;
     }
 
     .field-item span {
-      color: var(--white-40);
-      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    /* Notes */
+    .notes-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .notes-list li {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      padding: 0.4rem 0;
+      padding-left: 1.25rem;
+      position: relative;
+      line-height: 1.6;
+    }
+
+    .notes-list li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--yellow);
+    }
+
+    .notes-list code {
+      font-size: 0.75rem;
     }
 
     /* Footer */
-    footer {
-      border-top: 1px solid var(--white-08);
-      padding: 2rem 0;
-      margin-top: 4rem;
+    .footer {
+      padding: 1.5rem 2rem;
+      border-top: 1px solid var(--surface-border);
       text-align: center;
-      color: var(--white-40);
-      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      background: rgba(0, 0, 0, 0.2);
     }
 
     /* Responsive */
-    @media (max-width: 800px) {
+    @media (max-width: 768px) {
+      .content { padding: 2rem 1.5rem; }
       .cards-grid { grid-template-columns: repeat(2, 1fr); }
-      .quick-stats { grid-template-columns: repeat(2, 1fr); }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
       .pipeline { flex-direction: column; }
-      .pipeline-arrow { transform: rotate(90deg); justify-content: center; padding: 0.5rem; }
+      .pipeline-arrow { transform: rotate(90deg); }
       .fields-grid { grid-template-columns: 1fr; }
     }
 
-    @media (max-width: 550px) {
-      .cards-grid, .quick-stats { grid-template-columns: 1fr; }
-      .hero-meta { flex-direction: column; gap: 0.75rem; }
+    @media (max-width: 500px) {
+      .content-wrapper { padding: 0.75rem; }
+      .cards-grid, .stats-grid { grid-template-columns: 1fr; }
+      .hero-meta { flex-direction: column; gap: 0.5rem; }
       .endpoint-row { flex-wrap: wrap; }
-      .endpoint-row .desc { margin-left: 0; width: 100%; margin-top: 0.25rem; }
+      .endpoint-row .desc { margin-left: 0; width: 100%; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Navigation -->
-    <nav>
-      <div class="nav-logo">
-        <img src="/assets/FULL, BICOLOR@2x.png" alt="PartRunner" onerror="this.outerHTML='<span style=\"font-weight:700;font-size:1.1rem;color:var(--yellow)\">PartRunner</span>'">
-      </div>
-      <div class="nav-badge">
-        <span class="dot"></span>
-        API Online
-      </div>
-    </nav>
+  <!-- Parallax Background -->
+  <div class="parallax-bg"></div>
 
-    <!-- Hero -->
-    <section class="hero">
-      <span class="hero-label">Internal API Documentation</span>
-      <h1>
-        DocVal <span class="highlight">API</span><br>
-        Document Validation Service
-      </h1>
-      <p class="hero-description">
-        Servicio interno para extracción y validación de documentos mexicanos. 
-        Usa Google Vision OCR + GPT-4o para máxima precisión. 
-        Integra con n8n, Supabase, o cualquier backend.
-      </p>
-      <div class="hero-meta">
-        <div class="meta-item">
-          <span>Base URL:</span>
-          <strong>ai-document-extraction.vercel.app</strong>
+  <div class="content-wrapper">
+    <div class="main-container">
+      <!-- Header -->
+      <header class="header">
+        <img src="/assets/FULL, BICOLOR@2x.png" alt="PartRunner" class="logo" onerror="this.outerHTML='<span style=\'font-weight:700;font-size:1rem;color:var(--yellow)\'>PARTRUNNER</span>'">
+        <div class="status-badge">
+          <span class="status-dot"></span>
+          API Online
         </div>
-        <div class="meta-item">
-          <span>Auth:</span>
-          <strong>X-API-Key header</strong>
-        </div>
-      </div>
-    </section>
+      </header>
 
-    <!-- Quick Stats -->
-    <div class="quick-stats">
-      <div class="stat-card">
-        <div class="stat-value">~97%</div>
-        <div class="stat-label">Precisión OCR</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">&lt;2s</div>
-        <div class="stat-label">Tiempo respuesta</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">6</div>
-        <div class="stat-label">Tipos de docs</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">5</div>
-        <div class="stat-label">Validadores</div>
-      </div>
-    </div>
-
-    <!-- Pipeline -->
-    <section>
-      <h2 class="section-title">Pipeline de Procesamiento</h2>
-      <div class="pipeline">
-        <div class="pipeline-step">
-          <div class="num">1</div>
-          <h4>Google Vision</h4>
-          <p>Extracción de texto</p>
-        </div>
-        <div class="pipeline-arrow">→</div>
-        <div class="pipeline-step">
-          <div class="num">2</div>
-          <h4>GPT-4o</h4>
-          <p>Interpretación semántica</p>
-        </div>
-        <div class="pipeline-arrow">→</div>
-        <div class="pipeline-step">
-          <div class="num">3</div>
-          <h4>Checksum</h4>
-          <p>Validación matemática</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Documentos Soportados -->
-    <section>
-      <h2 class="section-title">Documentos Soportados</h2>
-      <div class="cards-grid">
-        <div class="card">
-          <div class="card-icon">🪪</div>
-          <h4>INE / IFE</h4>
-          <p>CURP, nombre, clave elector, dirección, vigencia</p>
-        </div>
-        <div class="card">
-          <div class="card-icon">🚗</div>
-          <h4>Licencia de Conducir</h4>
-          <p>Número, tipo, vigencia, nombre</p>
-        </div>
-        <div class="card">
-          <div class="card-icon">📋</div>
-          <h4>Constancia RFC</h4>
-          <p>RFC, razón social, domicilio fiscal</p>
-        </div>
-        <div class="card">
-          <div class="card-icon">🚙</div>
-          <h4>Tarjeta de Circulación</h4>
-          <p>Placas, VIN, modelo, marca, propietario</p>
-        </div>
-        <div class="card">
-          <div class="card-icon">🛡️</div>
-          <h4>Póliza de Seguro</h4>
-          <p>Aseguradora, número de póliza, vigencia</p>
-        </div>
-        <div class="card">
-          <div class="card-icon">🏦</div>
-          <h4>Carátula Bancaria</h4>
-          <p>CLABE, banco, titular de cuenta</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- API Reference -->
-    <section>
-      <h2 class="section-title">Referencia de API</h2>
-
-      <!-- Auth -->
-      <div class="api-block">
-        <h3>🔐 Autenticación</h3>
-        <p>Todos los endpoints requieren el header <code>X-API-Key</code> (excepto /api/health).</p>
-        <div class="code-block">
-          <div class="code-header">
-            <span class="code-dot red"></span>
-            <span class="code-dot yellow"></span>
-            <span class="code-dot green"></span>
-            <span class="code-title">headers</span>
+      <!-- Content -->
+      <div class="content">
+        <!-- Hero -->
+        <div class="hero">
+          <span class="hero-label">Documentación Interna</span>
+          <h1>DocVal <span class="highlight">API</span><br>Document Validation Service</h1>
+          <p class="hero-description">
+            Servicio interno para extracción y validación de documentos mexicanos. 
+            Pipeline híbrido: Google Vision OCR + GPT-4o. 
+            Integra con n8n, Supabase, o cualquier backend.
+          </p>
+          <div class="hero-meta">
+            <div class="meta-item">Base URL: <strong>ai-document-extraction.vercel.app</strong></div>
+            <div class="meta-item">Auth: <strong>X-API-Key header</strong></div>
           </div>
-          <pre><code><span class="code-key">X-API-Key</span>: tu-api-key-aqui</code></pre>
-        </div>
-      </div>
-
-      <!-- Analyze -->
-      <div class="api-block">
-        <h3>📄 POST /api/documents/analyze</h3>
-        <p>Endpoint principal. Acepta URL de imagen, archivo, o base64.</p>
-        
-        <h4>Opción 1: URL de imagen</h4>
-        <div class="code-block">
-          <div class="code-header">
-            <span class="code-dot red"></span>
-            <span class="code-dot yellow"></span>
-            <span class="code-dot green"></span>
-            <span class="code-title">curl</span>
-          </div>
-          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
-  -H <span class="code-str">"Content-Type: application/json"</span> \
-  -H <span class="code-str">"X-API-Key: tu-api-key"</span> \
-  -d <span class="code-str">'{"url": "https://storage.ejemplo.com/ine.jpg"}'</span></code></pre>
         </div>
 
-        <h4>Opción 2: Subir archivo</h4>
-        <div class="code-block">
-          <div class="code-header">
-            <span class="code-dot red"></span>
-            <span class="code-dot yellow"></span>
-            <span class="code-dot green"></span>
-            <span class="code-title">curl</span>
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat">
+            <div class="stat-value">~97%</div>
+            <div class="stat-label">Precisión OCR</div>
           </div>
-          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
-  -H <span class="code-str">"X-API-Key: tu-api-key"</span> \
-  -F <span class="code-str">"file=@documento.jpg"</span></code></pre>
+          <div class="stat">
+            <div class="stat-value">&lt;2s</div>
+            <div class="stat-label">Respuesta</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">6</div>
+            <div class="stat-label">Tipos Doc</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">5</div>
+            <div class="stat-label">Validadores</div>
+          </div>
         </div>
 
-        <h4>Opción 3: Base64</h4>
-        <div class="code-block">
-          <div class="code-header">
-            <span class="code-dot red"></span>
-            <span class="code-dot yellow"></span>
-            <span class="code-dot green"></span>
-            <span class="code-title">curl</span>
+        <!-- Pipeline -->
+        <div class="section">
+          <h2 class="section-title">Pipeline de Procesamiento</h2>
+          <div class="pipeline">
+            <div class="pipeline-step">
+              <div class="pipeline-num">1</div>
+              <h4>Google Vision</h4>
+              <p>Extracción de texto</p>
+            </div>
+            <span class="pipeline-arrow">→</span>
+            <div class="pipeline-step">
+              <div class="pipeline-num">2</div>
+              <h4>GPT-4o</h4>
+              <p>Interpretación</p>
+            </div>
+            <span class="pipeline-arrow">→</span>
+            <div class="pipeline-step">
+              <div class="pipeline-num">3</div>
+              <h4>Checksum</h4>
+              <p>Validación</p>
+            </div>
           </div>
-          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
-  -H <span class="code-str">"Content-Type: application/json"</span> \
-  -H <span class="code-str">"X-API-Key: tu-api-key"</span> \
-  -d <span class="code-str">'{"base64": "data:image/jpeg;base64,/9j/4AAQ..."}'</span></code></pre>
         </div>
 
-        <h4>Respuesta</h4>
-        <div class="code-block">
-          <div class="code-header">
-            <span class="code-dot red"></span>
-            <span class="code-dot yellow"></span>
-            <span class="code-dot green"></span>
-            <span class="code-title">response.json</span>
+        <!-- Documents -->
+        <div class="section">
+          <h2 class="section-title">Documentos Soportados</h2>
+          <div class="cards-grid">
+            <div class="card">
+              <div class="card-icon">🪪</div>
+              <h4>INE / IFE</h4>
+              <p>CURP, nombre, clave elector, dirección</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">🚗</div>
+              <h4>Licencia</h4>
+              <p>Número, tipo, vigencia</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">📋</div>
+              <h4>RFC</h4>
+              <p>RFC, razón social, domicilio</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">🚙</div>
+              <h4>Tarjeta Circulación</h4>
+              <p>Placas, VIN, modelo</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">🛡️</div>
+              <h4>Póliza Seguro</h4>
+              <p>Aseguradora, póliza, vigencia</p>
+            </div>
+            <div class="card">
+              <div class="card-icon">🏦</div>
+              <h4>Carátula Bancaria</h4>
+              <p>CLABE, banco, titular</p>
+            </div>
           </div>
-          <pre><code>{
-  <span class="code-key">"success"</span>: <span class="code-bool">true</span>,
-  <span class="code-key">"data"</span>: {
-    <span class="code-key">"isValid"</span>: <span class="code-bool">true</span>,
-    <span class="code-key">"detectedType"</span>: <span class="code-str">"INE"</span>,
-    <span class="code-key">"confidence"</span>: <span class="code-num">0.94</span>,
-    <span class="code-key">"extractedData"</span>: {
-      <span class="code-key">"nombre"</span>: <span class="code-str">"Juan Pérez García"</span>,
-      <span class="code-key">"curp"</span>: <span class="code-str">"PEGJ850101HDFRRL09"</span>,
-      <span class="code-key">"claveElector"</span>: <span class="code-str">"PRGRJN85010109H800"</span>
+        </div>
+
+        <!-- API Reference -->
+        <div class="section">
+          <h2 class="section-title">Referencia de API</h2>
+
+          <!-- Auth -->
+          <div class="api-block">
+            <h3>🔐 Autenticación</h3>
+            <p>Todos los endpoints requieren el header <code>X-API-Key</code> (excepto /api/health).</p>
+            <div class="code-block">
+              <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">headers</span>
+              </div>
+              <pre><span class="ck">X-API-Key</span>: tu-api-key</pre>
+            </div>
+          </div>
+
+          <!-- Analyze -->
+          <div class="api-block">
+            <h3>📄 POST /api/documents/analyze</h3>
+            <p>Endpoint principal. Acepta URL, archivo, o base64.</p>
+            
+            <h4>URL de imagen</h4>
+            <div class="code-block">
+              <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">curl</span>
+              </div>
+              <pre>curl -X POST .../api/documents/analyze \
+  -H <span class="cs">"Content-Type: application/json"</span> \
+  -H <span class="cs">"X-API-Key: tu-api-key"</span> \
+  -d <span class="cs">'{"url": "https://storage.com/ine.jpg"}'</span></pre>
+            </div>
+
+            <h4>Subir archivo</h4>
+            <div class="code-block">
+              <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">curl</span>
+              </div>
+              <pre>curl -X POST .../api/documents/analyze \
+  -H <span class="cs">"X-API-Key: tu-api-key"</span> \
+  -F <span class="cs">"file=@documento.jpg"</span></pre>
+            </div>
+
+            <h4>Respuesta</h4>
+            <div class="code-block">
+              <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">response.json</span>
+              </div>
+              <pre>{
+  <span class="ck">"success"</span>: <span class="cb">true</span>,
+  <span class="ck">"data"</span>: {
+    <span class="ck">"isValid"</span>: <span class="cb">true</span>,
+    <span class="ck">"detectedType"</span>: <span class="cs">"INE"</span>,
+    <span class="ck">"confidence"</span>: <span class="cn">0.94</span>,
+    <span class="ck">"extractedData"</span>: {
+      <span class="ck">"nombre"</span>: <span class="cs">"Juan Pérez"</span>,
+      <span class="ck">"curp"</span>: <span class="cs">"PEGJ850101HDFRRL09"</span>
     },
-    <span class="code-key">"ocrEngine"</span>: <span class="code-str">"hybrid"</span>,
-    <span class="code-key">"imageQuality"</span>: <span class="code-str">"buena"</span>,
-    <span class="code-key">"processingTime"</span>: <span class="code-num">1850</span>
+    <span class="ck">"ocrEngine"</span>: <span class="cs">"hybrid"</span>,
+    <span class="ck">"processingTime"</span>: <span class="cn">1850</span>
   }
-}</code></pre>
+}</pre>
+            </div>
+          </div>
+
+          <!-- Validate -->
+          <div class="api-block">
+            <h3>✅ POST /api/documents/validate-field</h3>
+            <p>Valida y corrige CURP, RFC, CLABE, VIN, o Placas.</p>
+            <div class="code-block">
+              <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">curl</span>
+              </div>
+              <pre>curl -X POST .../api/documents/validate-field \
+  -H <span class="cs">"Content-Type: application/json"</span> \
+  -H <span class="cs">"X-API-Key: tu-api-key"</span> \
+  -d <span class="cs">'{"field": "curp", "value": "PEGJ85O1O1HDFRRL09"}'</span></pre>
+            </div>
+          </div>
+
+          <!-- Other Endpoints -->
+          <div class="api-block">
+            <h3>📋 Otros Endpoints</h3>
+            <div class="endpoints-list">
+              <div class="endpoint-row">
+                <span class="method get">GET</span>
+                <code>/api/health</code>
+                <span class="desc">Health check (sin auth)</span>
+              </div>
+              <div class="endpoint-row">
+                <span class="method get">GET</span>
+                <code>/api/documents/supported-types</code>
+                <span class="desc">Lista tipos de documentos</span>
+              </div>
+              <div class="endpoint-row">
+                <span class="method post">POST</span>
+                <code>/api/documents/analyze-base64</code>
+                <span class="desc">Endpoint legacy</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fields -->
+          <div class="api-block">
+            <h3>📊 Campos de Respuesta</h3>
+            <div class="fields-grid">
+              <div class="field-item">
+                <code>isValid</code>
+                <span>Documento válido</span>
+              </div>
+              <div class="field-item">
+                <code>detectedType</code>
+                <span>INE, RFC, etc.</span>
+              </div>
+              <div class="field-item">
+                <code>confidence</code>
+                <span>0.0 - 1.0</span>
+              </div>
+              <div class="field-item">
+                <code>extractedData</code>
+                <span>Campos extraídos</span>
+              </div>
+              <div class="field-item">
+                <code>ocrEngine</code>
+                <span>hybrid | gpt-4o</span>
+              </div>
+              <div class="field-item">
+                <code>imageQuality</code>
+                <span>buena, regular, mala</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="api-block">
+            <h3>⚠️ Notas</h3>
+            <ul class="notes-list">
+              <li>Campos ilegibles se marcan con <code>***</code></li>
+              <li>Documentos con 3+ campos ilegibles: <code>isValid: false</code></li>
+              <li>Correcciones OCR en <code>ocrCorrections</code></li>
+              <li><code>documentType</code> es opcional (auto-detecta)</li>
+            </ul>
+          </div>
         </div>
       </div>
 
-      <!-- Validate Field -->
-      <div class="api-block">
-        <h3>✅ POST /api/documents/validate-field</h3>
-        <p>Valida y corrige automáticamente CURP, RFC, CLABE, VIN, o Placas.</p>
-        <div class="code-block">
-          <div class="code-header">
-            <span class="code-dot red"></span>
-            <span class="code-dot yellow"></span>
-            <span class="code-dot green"></span>
-            <span class="code-title">curl</span>
-          </div>
-          <pre><code>curl -X POST https://ai-document-extraction.vercel.app/api/documents/validate-field \
-  -H <span class="code-str">"Content-Type: application/json"</span> \
-  -H <span class="code-str">"X-API-Key: tu-api-key"</span> \
-  -d <span class="code-str">'{"field": "curp", "value": "PEGJ85O1O1HDFRRL09"}'</span></code></pre>
-        </div>
-        <p style="margin-top: 0.75rem; color: var(--white-40); font-size: 0.85rem;">
-          → Corrige automáticamente errores OCR comunes (O→0, I→1, etc.)
-        </p>
-      </div>
-
-      <!-- Other endpoints -->
-      <div class="api-block">
-        <h3>📋 Otros Endpoints</h3>
-        <div class="endpoints-list">
-          <div class="endpoint-row">
-            <span class="method get">GET</span>
-            <code>/api/health</code>
-            <span class="desc">Health check (sin auth)</span>
-          </div>
-          <div class="endpoint-row">
-            <span class="method get">GET</span>
-            <code>/api/documents/supported-types</code>
-            <span class="desc">Lista tipos de documentos</span>
-          </div>
-          <div class="endpoint-row">
-            <span class="method post">POST</span>
-            <code>/api/documents/analyze-base64</code>
-            <span class="desc">Endpoint legacy (solo base64)</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Response fields -->
-      <div class="api-block">
-        <h3>📊 Campos de Respuesta</h3>
-        <div class="fields-grid">
-          <div class="field-item">
-            <code>isValid</code>
-            <span>Documento válido (boolean)</span>
-          </div>
-          <div class="field-item">
-            <code>detectedType</code>
-            <span>INE, RFC, LICENCIA, etc.</span>
-          </div>
-          <div class="field-item">
-            <code>confidence</code>
-            <span>0.0 - 1.0</span>
-          </div>
-          <div class="field-item">
-            <code>extractedData</code>
-            <span>Campos extraídos</span>
-          </div>
-          <div class="field-item">
-            <code>ocrEngine</code>
-            <span>hybrid | gpt-4o-vision</span>
-          </div>
-          <div class="field-item">
-            <code>imageQuality</code>
-            <span>buena, regular, mala</span>
-          </div>
-          <div class="field-item">
-            <code>ocrCorrections</code>
-            <span>Correcciones aplicadas</span>
-          </div>
-          <div class="field-item">
-            <code>illegibleFields</code>
-            <span>Campos marcados ***</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Notas -->
-      <div class="api-block">
-        <h3>⚠️ Notas Importantes</h3>
-        <ul style="color: var(--white-60); font-size: 0.9rem; padding-left: 1.25rem; line-height: 1.8;">
-          <li>Si un campo es ilegible, se marca con <code>***</code> en lugar de inventar datos</li>
-          <li>Documentos con 3+ campos ilegibles se rechazan (<code>isValid: false</code>)</li>
-          <li>Las correcciones OCR se registran en <code>ocrCorrections</code></li>
-          <li>El campo <code>documentType</code> es opcional, se detecta automáticamente</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- Footer -->
-    <footer>
-      <p>PartRunner Engineering • Internal Use Only</p>
-    </footer>
+      <!-- Footer -->
+      <footer class="footer">
+        PartRunner Engineering · Internal Use Only
+      </footer>
+    </div>
   </div>
 </body>
 </html>
