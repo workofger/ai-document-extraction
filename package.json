@@ -11,7 +11,8 @@
     "deploy:prod": "vercel --prod"
   },
   "dependencies": {
-    "openai": "^4.77.0"
+    "openai": "^4.77.0",
+    "yaml": "^2.8.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

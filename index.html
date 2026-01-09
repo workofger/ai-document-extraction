@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DocVal API - Internal Documentation | PartRunner</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Swagger UI -->
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
   <style>
     :root {
       --yellow: #FFD60A;
@@ -33,7 +35,7 @@
     }
 
     .wrapper {
-      max-width: 900px;
+      max-width: 1100px;
       margin: 0 auto;
       padding: 1.5rem;
     }
@@ -58,6 +60,12 @@
 
     .logo { height: 26px; }
 
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
     .status {
       display: flex;
       align-items: center;
@@ -72,6 +80,65 @@
       background: var(--green);
       border-radius: 50%;
       box-shadow: 0 0 6px var(--green);
+    }
+
+    .openapi-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--surface-border);
+      color: var(--text-secondary);
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+
+    .openapi-btn:hover {
+      background: rgba(255,255,255,0.12);
+      color: var(--text-primary);
+    }
+
+    /* Main Tabs */
+    .main-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--surface-border);
+      background: rgba(0,0,0,0.15);
+    }
+
+    .main-tab {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.875rem 1.5rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .main-tab:hover {
+      color: var(--text-secondary);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .main-tab.active {
+      color: var(--yellow);
+      border-bottom-color: var(--yellow);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
     }
 
     /* Content */
@@ -380,32 +447,148 @@
       font-size: 0.7rem;
     }
 
-    /* Endpoints List */
-    .endpoints-mini {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+    /* Swagger Container */
+    #swagger-container {
+      padding: 0;
     }
 
-    .endpoint-mini {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      padding: 0.6rem 0.75rem;
-      background: rgba(0,0,0,0.2);
-      border-radius: 8px;
+    #swagger-ui {
+      background: transparent !important;
     }
 
-    .endpoint-mini code {
-      font-size: 0.75rem;
-      color: var(--text-primary);
+    /* Swagger UI Dark Theme Overrides */
+    .swagger-ui .topbar { display: none !important; }
+    
+    .swagger-ui {
+      font-family: 'Inter', -apple-system, sans-serif !important;
     }
 
-    .endpoint-mini .desc {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      margin-left: auto;
+    .swagger-ui .info { margin: 20px 0 !important; }
+    .swagger-ui .info .title { color: var(--text-primary) !important; font-size: 1.5rem !important; }
+    .swagger-ui .info .description p { color: var(--text-secondary) !important; }
+    .swagger-ui .info a { color: var(--yellow) !important; }
+    
+    .swagger-ui .scheme-container {
+      background: var(--surface-light) !important;
+      border-radius: 8px !important;
+      padding: 15px !important;
+      box-shadow: none !important;
     }
+
+    .swagger-ui .opblock-tag { color: var(--text-primary) !important; border-bottom: 1px solid var(--surface-border) !important; }
+    .swagger-ui .opblock-tag small { color: var(--text-muted) !important; }
+    
+    .swagger-ui .opblock {
+      background: var(--surface-light) !important;
+      border: 1px solid var(--surface-border) !important;
+      border-radius: 8px !important;
+      box-shadow: none !important;
+      margin-bottom: 10px !important;
+    }
+
+    .swagger-ui .opblock .opblock-summary {
+      border: none !important;
+    }
+
+    .swagger-ui .opblock.opblock-post { border-left: 3px solid var(--yellow) !important; }
+    .swagger-ui .opblock.opblock-post .opblock-summary-method { background: var(--yellow) !important; color: #000 !important; }
+    
+    .swagger-ui .opblock.opblock-get { border-left: 3px solid var(--green) !important; }
+    .swagger-ui .opblock.opblock-get .opblock-summary-method { background: var(--green) !important; }
+
+    .swagger-ui .opblock .opblock-summary-path { color: var(--text-primary) !important; }
+    .swagger-ui .opblock .opblock-summary-description { color: var(--text-secondary) !important; }
+
+    .swagger-ui .opblock-description-wrapper p { color: var(--text-secondary) !important; }
+    .swagger-ui .opblock-description-wrapper h4 { color: var(--text-primary) !important; }
+
+    .swagger-ui .opblock-section-header {
+      background: rgba(0,0,0,0.2) !important;
+      border-radius: 4px !important;
+    }
+
+    .swagger-ui .opblock-section-header h4 { color: var(--text-primary) !important; }
+    .swagger-ui .opblock-section-header label { color: var(--text-secondary) !important; }
+
+    .swagger-ui .parameters-col_description p { color: var(--text-secondary) !important; }
+    .swagger-ui .parameter__name { color: var(--text-primary) !important; }
+    .swagger-ui .parameter__type { color: var(--yellow) !important; }
+    .swagger-ui .parameter__in { color: var(--text-muted) !important; }
+
+    .swagger-ui table tbody tr td { border-bottom: 1px solid var(--surface-border) !important; }
+    .swagger-ui .response-col_status { color: var(--text-primary) !important; }
+    .swagger-ui .response-col_description { color: var(--text-secondary) !important; }
+
+    .swagger-ui .model-title { color: var(--text-primary) !important; }
+    .swagger-ui .model { color: var(--text-secondary) !important; }
+
+    .swagger-ui .btn {
+      border-radius: 6px !important;
+      font-weight: 500 !important;
+    }
+
+    .swagger-ui .btn.execute {
+      background: var(--yellow) !important;
+      border-color: var(--yellow) !important;
+      color: #000 !important;
+    }
+
+    .swagger-ui .btn.authorize {
+      background: transparent !important;
+      border-color: var(--yellow) !important;
+      color: var(--yellow) !important;
+    }
+
+    .swagger-ui .authorization__btn { fill: var(--yellow) !important; }
+
+    .swagger-ui input[type=text], .swagger-ui textarea {
+      background: rgba(0,0,0,0.3) !important;
+      border: 1px solid var(--surface-border) !important;
+      color: var(--text-primary) !important;
+      border-radius: 6px !important;
+    }
+
+    .swagger-ui select {
+      background: rgba(0,0,0,0.3) !important;
+      border: 1px solid var(--surface-border) !important;
+      color: var(--text-primary) !important;
+      border-radius: 6px !important;
+    }
+
+    .swagger-ui .highlight-code {
+      background: rgba(0,0,0,0.4) !important;
+      border-radius: 6px !important;
+    }
+
+    .swagger-ui .microlight { color: var(--text-secondary) !important; }
+    
+    .swagger-ui .copy-to-clipboard { background: rgba(255,255,255,0.1) !important; }
+    .swagger-ui .copy-to-clipboard button { background: transparent !important; }
+
+    .swagger-ui .dialog-ux .modal-ux {
+      background: var(--surface) !important;
+      border: 1px solid var(--surface-border) !important;
+      border-radius: 12px !important;
+    }
+
+    .swagger-ui .dialog-ux .modal-ux-header h3 { color: var(--text-primary) !important; }
+    .swagger-ui .dialog-ux .modal-ux-content p { color: var(--text-secondary) !important; }
+
+    .swagger-ui .model-box {
+      background: rgba(0,0,0,0.2) !important;
+      border-radius: 6px !important;
+    }
+
+    .swagger-ui .prop-type { color: var(--yellow) !important; }
+    .swagger-ui .prop-format { color: var(--text-muted) !important; }
+
+    .swagger-ui section.models {
+      border: 1px solid var(--surface-border) !important;
+      border-radius: 8px !important;
+    }
+
+    .swagger-ui section.models h4 { color: var(--text-primary) !important; }
+    .swagger-ui section.models .model-container { background: transparent !important; }
 
     /* Footer */
     .footer {
@@ -424,126 +607,146 @@
       .hero-info { flex-direction: column; gap: 0.5rem; }
       .doc-tabs { gap: 0.35rem; }
       .doc-tab { padding: 0.4rem 0.6rem; font-size: 0.7rem; }
+      .header-right { gap: 0.5rem; }
+      .openapi-btn span { display: none; }
     }
   </style>
-  </head>
-  <body>
+</head>
+<body>
   <div class="wrapper">
     <div class="main-card">
       <!-- Header -->
       <header class="header">
         <img src="/assets/FULL, BICOLOR@2x.png" alt="PartRunner" class="logo" onerror="this.outerHTML='<span style=\"font-weight:700;color:var(--yellow)\">PARTRUNNER</span>'">
-        <div class="status">
-          <span class="status-dot"></span>
-          API Online
+        <div class="header-right">
+          <a href="/api/openapi?format=yaml" class="openapi-btn" download="openapi.yaml">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>OpenAPI YAML</span>
+          </a>
+          <a href="/api/openapi?format=json" class="openapi-btn" download="openapi.json">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>OpenAPI JSON</span>
+          </a>
+          <div class="status">
+            <span class="status-dot"></span>
+            API Online
+          </div>
         </div>
       </header>
 
-      <div class="content">
-        <!-- Hero -->
-        <div class="hero">
-          <div class="hero-label">Internal API Documentation</div>
-          <h1>DocVal <span class="hl">API</span></h1>
-          <p>Mexican document extraction & validation service. Hybrid OCR pipeline: Google Vision + GPT-4o + checksum validation.</p>
-          <div class="hero-info">
-            <span>Base URL: <strong>ai-document-extraction.vercel.app</strong></span>
-            <span>Auth: <strong>X-API-Key header</strong></span>
-          </div>
-        </div>
+      <!-- Main Tabs -->
+      <div class="main-tabs">
+        <button class="main-tab active" onclick="switchTab('quickstart')">Quick Start</button>
+        <button class="main-tab" onclick="switchTab('swagger')">Interactive API (Swagger)</button>
+      </div>
 
-        <!-- Document Type Selector -->
-        <div class="doc-selector">
-          <div class="doc-selector-label">Select document type to see relevant examples</div>
-          <div class="doc-tabs">
-            <button class="doc-tab active" onclick="selectDoc('ine')">INE / IFE</button>
-            <button class="doc-tab" onclick="selectDoc('licencia')">Driver's License</button>
-            <button class="doc-tab" onclick="selectDoc('rfc')">RFC Certificate</button>
-            <button class="doc-tab" onclick="selectDoc('circulacion')">Vehicle Reg.</button>
-            <button class="doc-tab" onclick="selectDoc('poliza')">Insurance</button>
-            <button class="doc-tab" onclick="selectDoc('banco')">Bank Statement</button>
-          </div>
-          <div class="doc-description">
-            <span id="doc-desc">Mexican voter ID card with photo, personal data, and unique identifiers.</span>
-            <div class="doc-fields">
-              <strong>Extracted fields:</strong> <span id="doc-fields-list"><code>nombre</code><code>curp</code><code>claveElector</code><code>direccion</code><code>codigoPostal</code><code>vigencia</code><code>folio</code></span>
+      <!-- Quick Start Tab -->
+      <div id="tab-quickstart" class="tab-content active">
+        <div class="content">
+          <!-- Hero -->
+          <div class="hero">
+            <div class="hero-label">Internal API Documentation</div>
+            <h1>DocVal <span class="hl">API</span></h1>
+            <p>Mexican document extraction & validation service. Hybrid OCR pipeline: Google Vision + GPT-4o + checksum validation.</p>
+            <div class="hero-info">
+              <span>Base URL: <strong>ai-document-extraction.vercel.app</strong></span>
+              <span>Auth: <strong>X-API-Key header</strong></span>
             </div>
           </div>
-        </div>
 
-        <!-- ENDPOINTS -->
-        <section>
-          <h2 class="section-title">API Endpoints</h2>
-
-          <!-- POST /api/documents/analyze -->
-          <div class="endpoint">
-            <div class="endpoint-header">
-              <span class="method post">POST</span>
-              <span class="endpoint-path">/api/documents/analyze</span>
-              <span class="endpoint-auth">🔐 Auth Required</span>
+          <!-- Document Type Selector -->
+          <div class="doc-selector">
+            <div class="doc-selector-label">Select document type to see relevant examples</div>
+            <div class="doc-tabs">
+              <button class="doc-tab active" onclick="selectDoc('ine')">INE / IFE</button>
+              <button class="doc-tab" onclick="selectDoc('licencia')">Driver's License</button>
+              <button class="doc-tab" onclick="selectDoc('rfc')">RFC Certificate</button>
+              <button class="doc-tab" onclick="selectDoc('circulacion')">Vehicle Reg.</button>
+              <button class="doc-tab" onclick="selectDoc('poliza')">Insurance</button>
+              <button class="doc-tab" onclick="selectDoc('banco')">Bank Statement</button>
             </div>
-            <div class="endpoint-body">
-              <p class="endpoint-desc">
-                <strong>Main endpoint.</strong> Analyze document images and extract structured data.
-              </p>
-              <p class="endpoint-formats">
-                <strong>Accepts:</strong> Image URL, file upload (multipart), or base64<br>
-                <strong>Formats:</strong> JPEG, PNG, WebP, GIF (no PDF)
-              </p>
-
-              <div class="request-options">
-                <button class="req-opt active" onclick="selectReqType('url')">URL</button>
-                <button class="req-opt" onclick="selectReqType('file')">File Upload</button>
-                <button class="req-opt" onclick="selectReqType('base64')">Base64</button>
+            <div class="doc-description">
+              <span id="doc-desc">Mexican voter ID card with photo, personal data, and unique identifiers.</span>
+              <div class="doc-fields">
+                <strong>Extracted fields:</strong> <span id="doc-fields-list"><code>nombre</code><code>curp</code><code>claveElector</code><code>direccion</code><code>codigoPostal</code><code>vigencia</code><code>folio</code></span>
               </div>
+            </div>
+          </div>
 
-              <!-- URL Request -->
-              <div id="req-url" class="request-content active">
-                <div class="code-block">
-                  <div class="code-header">
-                    <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
-                    <span class="code-title">curl</span>
-                  </div>
-                  <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+          <!-- ENDPOINTS -->
+          <section>
+            <h2 class="section-title">API Endpoints</h2>
+
+            <!-- POST /api/documents/analyze -->
+            <div class="endpoint">
+              <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <span class="endpoint-path">/api/documents/analyze</span>
+                <span class="endpoint-auth">🔐 Auth Required</span>
+              </div>
+              <div class="endpoint-body">
+                <p class="endpoint-desc">
+                  <strong>Main endpoint.</strong> Analyze document images and extract structured data.
+                </p>
+                <p class="endpoint-formats">
+                  <strong>Accepts:</strong> Image URL, file upload (multipart), or base64<br>
+                  <strong>Formats:</strong> JPEG, PNG, WebP, GIF (no PDF)
+                </p>
+
+                <div class="request-options">
+                  <button class="req-opt active" onclick="selectReqType('url')">URL</button>
+                  <button class="req-opt" onclick="selectReqType('file')">File Upload</button>
+                  <button class="req-opt" onclick="selectReqType('base64')">Base64</button>
+                </div>
+
+                <!-- URL Request -->
+                <div id="req-url" class="request-content active">
+                  <div class="code-block">
+                    <div class="code-header">
+                      <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                      <span class="code-title">curl</span>
+                    </div>
+                    <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
   -H <span class="cs">"Content-Type: application/json"</span> \
   -H <span class="cs">"X-API-Key: YOUR_API_KEY"</span> \
   -d <span class="cs">'{"url": "https://storage.example.com/<span id="url-example">ine</span>.jpg"}'</span></pre>
-                </div>
-              </div>
-
-              <!-- File Upload Request -->
-              <div id="req-file" class="request-content">
-                <div class="code-block">
-                  <div class="code-header">
-                    <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
-                    <span class="code-title">curl</span>
                   </div>
-                  <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+                </div>
+
+                <!-- File Upload Request -->
+                <div id="req-file" class="request-content">
+                  <div class="code-block">
+                    <div class="code-header">
+                      <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                      <span class="code-title">curl</span>
+                    </div>
+                    <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
   -H <span class="cs">"X-API-Key: YOUR_API_KEY"</span> \
   -F <span class="cs">"file=@<span id="file-example">ine</span>.jpg"</span></pre>
-                </div>
-              </div>
-
-              <!-- Base64 Request -->
-              <div id="req-base64" class="request-content">
-                <div class="code-block">
-                  <div class="code-header">
-                    <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
-                    <span class="code-title">curl</span>
                   </div>
-                  <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+                </div>
+
+                <!-- Base64 Request -->
+                <div id="req-base64" class="request-content">
+                  <div class="code-block">
+                    <div class="code-header">
+                      <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                      <span class="code-title">curl</span>
+                    </div>
+                    <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
   -H <span class="cs">"Content-Type: application/json"</span> \
   -H <span class="cs">"X-API-Key: YOUR_API_KEY"</span> \
   -d <span class="cs">'{"base64": "data:image/jpeg;base64,/9j/4AAQ..."}'</span></pre>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Response -->
-              <div class="code-block">
-                <div class="code-header">
-                  <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
-                  <span class="code-title">Response</span>
-                </div>
-                <pre id="analyze-response">{
+                <!-- Response -->
+                <div class="code-block">
+                  <div class="code-header">
+                    <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                    <span class="code-title">Response</span>
+                  </div>
+                  <pre id="analyze-response">{
   <span class="ck">"success"</span>: <span class="cb">true</span>,
   <span class="ck">"data"</span>: {
     <span class="ck">"isValid"</span>: <span class="cb">true</span>,
@@ -568,42 +771,42 @@
     <span class="ck">"processingTime"</span>: <span class="cn">1850</span>
   }
 }</pre>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- POST /api/documents/validate-field -->
-          <div class="endpoint">
-            <div class="endpoint-header">
-              <span class="method post">POST</span>
-              <span class="endpoint-path">/api/documents/validate-field</span>
-              <span class="endpoint-auth">🔐 Auth Required</span>
-            </div>
-            <div class="endpoint-body">
-              <p class="endpoint-desc">
-                <strong>Validate & auto-correct</strong> individual fields with checksum verification.
-              </p>
-              <p class="endpoint-formats">
-                <strong>Supported fields:</strong> <code>curp</code> <code>rfc</code> <code>clabe</code> <code>vin</code> <code>placas</code>
-              </p>
+            <!-- POST /api/documents/validate-field -->
+            <div class="endpoint">
+              <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <span class="endpoint-path">/api/documents/validate-field</span>
+                <span class="endpoint-auth">🔐 Auth Required</span>
+              </div>
+              <div class="endpoint-body">
+                <p class="endpoint-desc">
+                  <strong>Validate & auto-correct</strong> individual fields with checksum verification.
+                </p>
+                <p class="endpoint-formats">
+                  <strong>Supported fields:</strong> <code>curp</code> <code>rfc</code> <code>clabe</code> <code>vin</code> <code>placas</code>
+                </p>
 
-              <div class="code-block">
-                <div class="code-header">
-                  <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
-                  <span class="code-title">curl</span>
-                </div>
-                <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/validate-field \
+                <div class="code-block">
+                  <div class="code-header">
+                    <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                    <span class="code-title">curl</span>
+                  </div>
+                  <pre>curl -X POST https://ai-document-extraction.vercel.app/api/documents/validate-field \
   -H <span class="cs">"Content-Type: application/json"</span> \
   -H <span class="cs">"X-API-Key: YOUR_API_KEY"</span> \
   -d <span class="cs">'{"field": "<span id="validate-field">curp</span>", "value": "<span id="validate-value">PEGJ85O1O1HDFRRL09</span>"}'</span></pre>
-              </div>
-
-              <div class="code-block">
-                <div class="code-header">
-                  <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
-                  <span class="code-title">Response</span>
                 </div>
-                <pre id="validate-response">{
+
+                <div class="code-block">
+                  <div class="code-header">
+                    <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                    <span class="code-title">Response</span>
+                  </div>
+                  <pre id="validate-response">{
   <span class="ck">"success"</span>: <span class="cb">true</span>,
   <span class="ck">"data"</span>: {
     <span class="ck">"field"</span>: <span class="cs">"curp"</span>,
@@ -617,65 +820,73 @@
     ]
   }
 }</pre>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Other Endpoints -->
-          <div class="endpoint">
-            <div class="endpoint-header">
-              <span class="method get">GET</span>
-              <span class="endpoint-path">/api/health</span>
-            </div>
-            <div class="endpoint-body">
-              <p class="endpoint-desc">Health check. <strong>No authentication required.</strong></p>
-              <div class="code-block">
-                <div class="code-header">
-                  <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
-                  <span class="code-title">Response</span>
-                </div>
-                <pre>{
+            <!-- Other Endpoints -->
+            <div class="endpoint">
+              <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/health</span>
+              </div>
+              <div class="endpoint-body">
+                <p class="endpoint-desc">Health check. <strong>No authentication required.</strong></p>
+                <div class="code-block">
+                  <div class="code-header">
+                    <span class="code-dot r"></span><span class="code-dot y"></span><span class="code-dot g"></span>
+                    <span class="code-title">Response</span>
+                  </div>
+                  <pre>{
   <span class="ck">"status"</span>: <span class="cs">"ok"</span>,
   <span class="ck">"timestamp"</span>: <span class="cs">"2026-01-08T20:30:00.000Z"</span>,
   <span class="ck">"version"</span>: <span class="cs">"1.0.0"</span>
 }</pre>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="endpoint">
-            <div class="endpoint-header">
-              <span class="method get">GET</span>
-              <span class="endpoint-path">/api/documents/supported-types</span>
-              <span class="endpoint-auth">🔐 Auth Required</span>
+            <div class="endpoint">
+              <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/documents/supported-types</span>
+                <span class="endpoint-auth">🔐 Auth Required</span>
+              </div>
+              <div class="endpoint-body">
+                <p class="endpoint-desc">Returns list of supported document types and extractable fields.</p>
+              </div>
             </div>
-            <div class="endpoint-body">
-              <p class="endpoint-desc">Returns list of supported document types and extractable fields.</p>
-            </div>
-          </div>
 
-          <div class="endpoint">
-            <div class="endpoint-header">
-              <span class="method post">POST</span>
-              <span class="endpoint-path">/api/documents/analyze-base64</span>
-              <span class="endpoint-auth">🔐 Auth Required</span>
+            <div class="endpoint">
+              <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <span class="endpoint-path">/api/documents/analyze-base64</span>
+                <span class="endpoint-auth">🔐 Auth Required</span>
+              </div>
+              <div class="endpoint-body">
+                <p class="endpoint-desc">Legacy endpoint. Base64 only. Use <code>/api/documents/analyze</code> instead.</p>
+              </div>
             </div>
-            <div class="endpoint-body">
-              <p class="endpoint-desc">Legacy endpoint. Base64 only. Use <code>/api/documents/analyze</code> instead.</p>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- Notes -->
-        <section>
-          <h2 class="section-title">Important Notes</h2>
-          <div class="info-box">
-            <strong>⚠️ Data Integrity:</strong> The API never invents data. Illegible characters are marked with <code>*</code> and completely unreadable fields with <code>***</code>.<br><br>
-            <strong>📋 Rejection:</strong> Documents with 3+ illegible fields or poor image quality are rejected (<code>isValid: false</code>).<br><br>
-            <strong>🔧 Auto-correction:</strong> Common OCR errors (O→0, I→1) are automatically corrected and logged in <code>ocrCorrections</code>.<br><br>
-            <strong>📷 Formats:</strong> JPEG, PNG, WebP, GIF only. No PDF support.
-          </div>
-        </section>
+          <!-- Notes -->
+          <section>
+            <h2 class="section-title">Important Notes</h2>
+            <div class="info-box">
+              <strong>⚠️ Data Integrity:</strong> The API never invents data. Illegible characters are marked with <code>*</code> and completely unreadable fields with <code>***</code>.<br><br>
+              <strong>📋 Rejection:</strong> Documents with 3+ illegible fields or poor image quality are rejected (<code>isValid: false</code>).<br><br>
+              <strong>🔧 Auto-correction:</strong> Common OCR errors (O→0, I→1) are automatically corrected and logged in <code>ocrCorrections</code>.<br><br>
+              <strong>📷 Formats:</strong> JPEG, PNG, WebP, GIF only. No PDF support.
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Swagger Tab -->
+      <div id="tab-swagger" class="tab-content">
+        <div id="swagger-container">
+          <div id="swagger-ui"></div>
+        </div>
       </div>
 
       <footer class="footer">
@@ -684,7 +895,9 @@
     </div>
   </div>
 
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
   <script>
+    // Document data
     const docData = {
       ine: {
         desc: "Mexican voter ID card with photo, personal data, and unique identifiers.",
@@ -859,29 +1072,56 @@
       }
     };
 
+    // Tab switching
+    function switchTab(tab) {
+      document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tab).classList.add('active');
+
+      // Initialize Swagger UI on first view
+      if (tab === 'swagger' && !window.swaggerInitialized) {
+        initSwagger();
+        window.swaggerInitialized = true;
+      }
+    }
+
+    // Initialize Swagger UI
+    function initSwagger() {
+      SwaggerUIBundle({
+        url: '/api/openapi?format=json',
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIBundle.SwaggerUIStandalonePreset
+        ],
+        layout: "BaseLayout",
+        defaultModelsExpandDepth: -1,
+        docExpansion: 'list',
+        persistAuthorization: true,
+        tryItOutEnabled: true
+      });
+    }
+
+    // Document selector
     function selectDoc(type) {
-      // Update tabs
       document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'));
       event.target.classList.add('active');
 
       const data = docData[type];
 
-      // Update description
       document.getElementById('doc-desc').textContent = data.desc;
-
-      // Update fields
       document.getElementById('doc-fields-list').innerHTML = data.fields.map(f => `<code>${f}</code>`).join('');
-
-      // Update examples
       document.getElementById('url-example').textContent = data.filename;
       document.getElementById('file-example').textContent = data.filename;
       document.getElementById('validate-field').textContent = data.validateField;
       document.getElementById('validate-value').textContent = data.validateValue;
-
-      // Update response
       document.getElementById('analyze-response').innerHTML = data.response;
     }
 
+    // Request type selector
     function selectReqType(type) {
       document.querySelectorAll('.req-opt').forEach(t => t.classList.remove('active'));
       event.target.classList.add('active');
@@ -890,5 +1130,5 @@
       document.getElementById('req-' + type).classList.add('active');
     }
   </script>
-  </body>
+</body>
 </html>
