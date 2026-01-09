@@ -1,13 +1,17 @@
 # DocVal API
 
-API de validación de documentos mexicanos usando GPT-4o Vision.
+API de validación de documentos mexicanos con **pipeline híbrido OCR**:
+1. 🔍 **Google Cloud Vision** - Extracción de texto de alta precisión
+2. 🧠 **GPT-4o** - Interpretación semántica y estructuración
+3. ✅ **Checksum Validation** - Verificación matemática (CURP, RFC, CLABE)
 
 ## 🚀 Endpoints
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | GET | `/api/health` | Health check (sin auth) |
-| POST | `/api/documents/analyze-base64` | Analizar documento |
+| POST | `/api/documents/analyze` | Analizar imagen (URL, base64, file) |
+| POST | `/api/documents/analyze-base64` | Analizar documento (solo base64) |
 | POST | `/api/documents/validate-field` | Validar CURP/RFC/CLABE/VIN |
 | GET | `/api/documents/supported-types` | Listar tipos soportados |
 
@@ -27,15 +31,31 @@ X-API-Key: tu-api-key
 curl https://ai-document-extraction.vercel.app/api/health
 ```
 
-### Analizar Documento
+### Analizar con URL (Recomendado)
 
 ```bash
-curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze-base64 \
+curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: tu-api-key" \
+  -d '{"url": "https://ejemplo.com/ine.jpg"}'
+```
+
+### Analizar con File Upload
+
+```bash
+curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
+  -H "X-API-Key: tu-api-key" \
+  -F "file=@documento.jpg"
+```
+
+### Analizar con Base64
+
+```bash
+curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze \
   -H "Content-Type: application/json" \
   -H "X-API-Key: tu-api-key" \
   -d '{
-    "document": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
-    "documentType": "INE"
+    "base64": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
   }'
 ```
 
@@ -46,13 +66,16 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/analyze-bas
   "data": {
     "isValid": true,
     "detectedType": "INE",
-    "confidence": 0.92,
+    "confidence": 0.94,
     "extractedData": {
       "nombre": "Juan Pérez García",
       "curp": "PEGJ850101HDFRRL09",
       "claveElector": "PRGRJN85010109H800"
     },
-    "processingTime": 2340
+    "ocrEngine": "hybrid",
+    "visionConfidence": 0.97,
+    "imageQuality": "buena",
+    "processingTime": 1850
   }
 }
 ```
@@ -91,10 +114,26 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/validate-fi
 
 ## 🔧 Variables de Entorno
 
-| Variable | Descripción |
-|----------|-------------|
-| `OPENAI_API_KEY` | API Key de OpenAI |
-| `API_KEY` | Clave para autenticar consumidores |
+| Variable | Descripción | Requerida |
+|----------|-------------|-----------|
+| `OPENAI_API_KEY` | API Key de OpenAI (GPT-4o) | ✅ Sí |
+| `API_KEY` | Clave para autenticar consumidores | ✅ Sí |
+| `GOOGLE_CLOUD_API_KEY` | API Key de Google Cloud Vision | ⚡ Recomendada |
+
+> **Nota**: Sin `GOOGLE_CLOUD_API_KEY`, la API funciona solo con GPT-4o Vision. Con ella habilitada, se activa el pipeline híbrido que mejora significativamente la precisión.
+
+## ⚠️ Manejo de Datos Ilegibles
+
+La API **nunca inventa datos**. Si un campo no es legible:
+
+- Caracteres individuales ilegibles: se marcan con `*` (ej: `PEGJ85*1*1HDFRRL09`)
+- Campos completamente ilegibles: se marcan con `***`
+- Documentos con 3+ campos ilegibles o mala calidad: se rechazan con `isValid: false`
+
+**Campos en respuesta:**
+- `imageQuality`: `buena` | `regular` | `mala` | `ilegible`
+- `illegibleFields`: Array de campos que no pudieron leerse
+- `ocrCorrections`: Correcciones OCR aplicadas
 
 ## 📁 Estructura
 
@@ -102,15 +141,18 @@ curl -X POST https://ai-document-extraction.vercel.app/api/documents/validate-fi
 docval-api/
 ├── api/
 │   ├── lib/
-│   │   ├── auth.ts           # Autenticación X-API-Key
-│   │   ├── cors.ts           # Middleware CORS
-│   │   └── documentService.ts # Servicio GPT-4o Vision
+│   │   ├── auth.ts               # Autenticación X-API-Key
+│   │   ├── cors.ts               # Middleware CORS
+│   │   ├── documentService.ts    # Pipeline híbrido
+│   │   └── googleVisionService.ts # Google Cloud Vision OCR
 │   ├── documents/
-│   │   ├── analyze-base64.ts  # POST: Analizar documento
-│   │   ├── validate-field.ts  # POST: Validar campo
-│   │   └── supported-types.ts # GET: Tipos soportados
-│   ├── health.ts              # GET: Health check
+│   │   ├── analyze.ts            # POST: Analizar (URL/file/base64)
+│   │   ├── analyze-base64.ts     # POST: Analizar (solo base64)
+│   │   ├── validate-field.ts     # POST: Validar campo
+│   │   └── supported-types.ts    # GET: Tipos soportados
+│   ├── health.ts                 # GET: Health check
 │   └── tsconfig.json
+├── index.html                    # Documentación
 ├── package.json
 ├── tsconfig.json
 └── vercel.json
@@ -124,6 +166,13 @@ El proyecto se despliega automáticamente en Vercel al hacer push a `main`.
 # Deploy manual
 npx vercel --prod
 ```
+
+## 🔑 Configurar Google Cloud Vision
+
+1. Ve a [Google Cloud Console](https://console.cloud.google.com/)
+2. Habilita la API "Cloud Vision API"
+3. Crea una API Key en "Credentials"
+4. Añade `GOOGLE_CLOUD_API_KEY` en las variables de entorno de Vercel
 
 ---
 

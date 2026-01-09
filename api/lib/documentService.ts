@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { extractTextWithVision, normalizeOCRText, VisionOCRResult } from './googleVisionService.js';
 
 // ===========================================
 // TYPES
@@ -45,6 +46,8 @@ export interface DocumentAnalysisResult {
   ocrCorrections?: string[];
   imageQuality?: string;
   illegibleFields?: string[];
+  ocrEngine?: 'google-vision' | 'gpt-4o-vision' | 'hybrid';
+  visionConfidence?: number;
 }
 
 export interface FieldValidationResult {
@@ -475,6 +478,69 @@ Responde SOLO con JSON válido:
 }`;
 };
 
+/**
+ * Build prompt for text-based analysis (when using OCR-extracted text)
+ */
+const buildTextPrompt = (ocrText: string, expectedDocType: string, previousData?: ExtractedData): string => {
+  let crossValidationInstructions = '';
+  
+  if (previousData && Object.keys(previousData).length > 0) {
+    crossValidationInstructions = `
+VALIDACIÓN CRUZADA - Datos previos del expediente:
+${previousData.nombre ? `- Nombre registrado: "${previousData.nombre}"` : ''}
+${previousData.curp ? `- CURP registrado: "${previousData.curp}"` : ''}
+${previousData.rfc ? `- RFC registrado: "${previousData.rfc}"` : ''}
+${previousData.placas ? `- Placas registradas: "${previousData.placas}"` : ''}
+${previousData.vin ? `- VIN registrado: "${previousData.vin}"` : ''}
+
+Si encuentras estos datos, verifica si coinciden con los del texto. Si no coinciden, inclúyelo en "crossValidationWarnings".
+`;
+  }
+
+  return `Eres un experto en análisis de documentos legales mexicanos.
+
+DOCUMENTO ESPERADO: "${expectedDocType === 'auto' ? 'Detectar automáticamente' : expectedDocType}"
+
+${crossValidationInstructions}
+
+TEXTO EXTRAÍDO DEL DOCUMENTO (mediante OCR):
+"""
+${ocrText}
+"""
+
+INSTRUCCIONES:
+1. Analiza el texto extraído y determina qué tipo de documento es.
+2. Extrae SOLO los datos que están CLARAMENTE presentes en el texto.
+3. Si un dato está parcialmente visible o confuso en el OCR, usa "*" para los caracteres dudosos.
+4. Si un dato no está presente, NO lo incluyas en extractedData.
+5. NUNCA inventes datos que no estén en el texto.
+
+FORMATOS MEXICANOS:
+- CURP: 18 caracteres (ej: PEGJ850101HDFRRL09)
+- RFC: 12-13 caracteres (ej: PEGJ850101ABC)
+- CLABE: 18 dígitos (ej: 012180001234567890)
+- VIN: 17 caracteres alfanuméricos
+
+TIPOS DE DOCUMENTO: INE/IFE, Licencia de Conducir, Pasaporte, Tarjeta de Circulación, 
+Constancia Fiscal (RFC/SAT), Póliza de Seguro, Carátula Bancaria, Comprobante de Domicilio
+
+CAMPOS A BUSCAR: nombre, curp, rfc, claveElector, numeroLicencia, tipoLicencia, vigencia, 
+vigenciaFin, direccion, codigoPostal, placas, vin, modelo, marca, anio, aseguradora, 
+poliza, banco, clabe, numeroCuenta, razonSocial, telefono, email, folio
+
+Responde SOLO con JSON válido:
+{
+  "isValid": boolean,
+  "detectedType": "tipo detectado",
+  "matchesExpected": boolean,
+  "reason": "explicación",
+  "confidence": 0.0-1.0,
+  "extractedData": { "campo": "valor" },
+  "ocrWarnings": ["campos con posibles errores de OCR"],
+  "textQuality": "buena" | "regular" | "mala"
+}`;
+};
+
 // ===========================================
 // MAIN FUNCTIONS
 // ===========================================
@@ -497,38 +563,84 @@ export async function analyzeDocument(
     const base64 = matches[2];
     
     const openai = getOpenAIClient();
-    const prompt = buildSmartPrompt(expectedDocType, previousData);
 
-    // Supported image types for GPT-4o Vision
-    const supportedTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
-    const finalMimeType = supportedTypes.includes(mimeType) ? mimeType : 'image/png';
+    // ===========================================
+    // HYBRID PIPELINE: Google Vision OCR + GPT-4o
+    // ===========================================
+    
+    // Step 1: Try Google Cloud Vision OCR first (more accurate for text extraction)
+    let visionResult: VisionOCRResult | null = null;
+    let useVisionPipeline = false;
+    
+    if (process.env.GOOGLE_CLOUD_API_KEY) {
+      console.log('[DocVal] Using hybrid pipeline: Google Vision OCR + GPT-4o');
+      visionResult = await extractTextWithVision(base64);
+      
+      // Use Vision pipeline if we got meaningful text (at least 20 characters)
+      if (visionResult.success && visionResult.fullText.length >= 20) {
+        useVisionPipeline = true;
+        console.log(`[DocVal] Vision OCR extracted ${visionResult.fullText.length} chars`);
+      } else {
+        console.log('[DocVal] Vision OCR failed or insufficient text, falling back to GPT-4o Vision');
+      }
+    } else {
+      console.log('[DocVal] No Google Cloud API key, using GPT-4o Vision directly');
+    }
 
-    console.log(`[DocVal] Analyzing document with GPT-4o Vision...`);
+    let response;
+    
+    if (useVisionPipeline && visionResult) {
+      // Step 2a: Use GPT-4o to interpret OCR text (no image needed)
+      const normalizedText = normalizeOCRText(visionResult.fullText);
+      const textPrompt = buildTextPrompt(normalizedText, expectedDocType, previousData);
+      
+      console.log('[DocVal] Sending OCR text to GPT-4o for interpretation...');
+      
+      response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'user',
+            content: textPrompt
+          }
+        ],
+        max_tokens: 4096,
+        temperature: 0.1,
+      });
+    } else {
+      // Step 2b: Fallback - Use GPT-4o Vision directly (original method)
+      const prompt = buildSmartPrompt(expectedDocType, previousData);
+      const supportedTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+      const finalMimeType = supportedTypes.includes(mimeType) ? mimeType : 'image/png';
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image_url',
-              image_url: {
-                url: `data:${finalMimeType};base64,${base64}`,
-                detail: 'high'
+      console.log(`[DocVal] Analyzing document with GPT-4o Vision...`);
+
+      response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${finalMimeType};base64,${base64}`,
+                  detail: 'high'
+                }
+              },
+              {
+                type: 'text',
+                text: prompt
               }
-            },
-            {
-              type: 'text',
-              text: prompt
-            }
-          ]
-        }
-      ],
-      max_tokens: 4096,
-      temperature: 0.1,
-    });
+            ]
+          }
+        ],
+        max_tokens: 4096,
+        temperature: 0.1,
+      });
+    }
 
+    // Process response (common for both pipelines)
     const content = response.choices[0]?.message?.content;
     
     if (!content) {
@@ -553,9 +665,12 @@ export async function analyzeDocument(
     
     const { correctedData, corrections, overallConfidence, illegibleFields } = postProcessExtractedData(rawData);
 
-    // Check image quality from AI response
-    const imageQuality = parsed.imageQuality || 'regular';
+    // Check image/text quality from AI response
+    const imageQuality = parsed.imageQuality || parsed.textQuality || 'regular';
     const isImageIllegible = imageQuality === 'ilegible' || imageQuality === 'mala';
+    
+    // Add Vision OCR confidence boost if available
+    const visionConfidenceBoost = visionResult?.success ? Math.min(visionResult.confidence * 0.1, 0.05) : 0;
 
     // Build enhanced reason with corrections info
     let enhancedReason = String(parsed.reason || 'Documento procesado');
@@ -576,11 +691,11 @@ export async function analyzeDocument(
       enhancedReason += ` ⚠️ ${parsed.crossValidationWarnings.join(', ')}`;
     }
 
-    // Lower confidence if there are illegible fields
+    // Lower confidence if there are illegible fields, boost if Vision OCR was used
     const aiConfidence = Math.min(1, Math.max(0, Number(parsed.confidence) || 0));
     const illegiblePenalty = illegibleFields.length * 0.1;
     const qualityPenalty = isImageIllegible ? 0.3 : (imageQuality === 'mala' ? 0.2 : 0);
-    const combinedConfidence = Math.max(0, (aiConfidence * 0.6) + (overallConfidence * 0.4) - illegiblePenalty - qualityPenalty);
+    const combinedConfidence = Math.max(0, (aiConfidence * 0.6) + (overallConfidence * 0.4) - illegiblePenalty - qualityPenalty + visionConfidenceBoost);
 
     // If too many fields are illegible, mark as invalid
     const shouldReject = illegibleFields.length >= 3 || isImageIllegible;
@@ -605,7 +720,9 @@ export async function analyzeDocument(
       ],
       ocrCorrections: corrections,
       imageQuality,
-      illegibleFields
+      illegibleFields,
+      ocrEngine: useVisionPipeline ? 'hybrid' : 'gpt-4o-vision',
+      visionConfidence: visionResult?.success ? visionResult.confidence : undefined
     };
     
   } catch (error) {

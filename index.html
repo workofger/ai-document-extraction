@@ -285,7 +285,7 @@
     <header>
       <div class="logo">PartRunner</div>
       <h1>DocVal API</h1>
-      <p class="tagline">API de validación de documentos mexicanos con GPT-4o Vision</p>
+      <p class="tagline">API de validación de documentos mexicanos con Google Vision OCR + GPT-4o</p>
       <div class="status">
         <span class="status-dot"></span>
         <span>Operativo</span>
@@ -296,6 +296,37 @@
       <h2>Base URL</h2>
       <div class="card">
         <pre><code>https://ai-document-extraction.vercel.app</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>🚀 Pipeline Híbrido OCR</h2>
+      <div class="card">
+        <p style="margin-bottom: 1rem; color: var(--text-muted);">
+          Esta API usa un <strong>pipeline de doble verificación</strong> para máxima precisión:
+        </p>
+        <table>
+          <tbody>
+            <tr>
+              <td style="text-align: center; font-size: 1.5rem;">1️⃣</td>
+              <td><strong>Google Cloud Vision OCR</strong></td>
+              <td>Extracción de texto de alta precisión</td>
+            </tr>
+            <tr>
+              <td style="text-align: center; font-size: 1.5rem;">2️⃣</td>
+              <td><strong>GPT-4o Analysis</strong></td>
+              <td>Interpretación semántica y validación</td>
+            </tr>
+            <tr>
+              <td style="text-align: center; font-size: 1.5rem;">3️⃣</td>
+              <td><strong>Checksum Validation</strong></td>
+              <td>Verificación matemática (CURP, RFC, CLABE)</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="margin-top: 1rem; color: var(--yellow); font-size: 0.9rem;">
+          ⚠️ Los campos ilegibles se marcan con <code>***</code> en lugar de inventar datos.
+        </p>
       </div>
     </section>
 
@@ -385,11 +416,15 @@
   <span class="key">"data"</span>: {
     <span class="key">"isValid"</span>: <span class="bool">true</span>,
     <span class="key">"detectedType"</span>: <span class="str">"INE"</span>,
-    <span class="key">"confidence"</span>: <span class="num">0.92</span>,
+    <span class="key">"confidence"</span>: <span class="num">0.94</span>,
     <span class="key">"extractedData"</span>: {
       <span class="key">"nombre"</span>: <span class="str">"Juan Pérez García"</span>,
       <span class="key">"curp"</span>: <span class="str">"PEGJ850101HDFRRL09"</span>
-    }
+    },
+    <span class="key">"ocrEngine"</span>: <span class="str">"hybrid"</span>,
+    <span class="key">"visionConfidence"</span>: <span class="num">0.97</span>,
+    <span class="key">"imageQuality"</span>: <span class="str">"buena"</span>,
+    <span class="key">"processingTime"</span>: <span class="num">1850</span>
   }
 }</code></pre>
       </div>
@@ -580,6 +615,68 @@
               <td><code>placas</code></td>
               <td>Placas vehiculares</td>
               <td>ABC-123-A</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Campos de Respuesta</h2>
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Campo</th>
+              <th>Tipo</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>isValid</code></td>
+              <td>boolean</td>
+              <td>Documento válido y legible</td>
+            </tr>
+            <tr>
+              <td><code>detectedType</code></td>
+              <td>string</td>
+              <td>Tipo de documento detectado</td>
+            </tr>
+            <tr>
+              <td><code>confidence</code></td>
+              <td>number</td>
+              <td>Nivel de confianza (0.0 - 1.0)</td>
+            </tr>
+            <tr>
+              <td><code>extractedData</code></td>
+              <td>object</td>
+              <td>Datos extraídos del documento</td>
+            </tr>
+            <tr>
+              <td><code>ocrEngine</code></td>
+              <td>string</td>
+              <td><code>hybrid</code> | <code>gpt-4o-vision</code></td>
+            </tr>
+            <tr>
+              <td><code>visionConfidence</code></td>
+              <td>number</td>
+              <td>Confianza de Google Vision OCR</td>
+            </tr>
+            <tr>
+              <td><code>imageQuality</code></td>
+              <td>string</td>
+              <td><code>buena</code> | <code>regular</code> | <code>mala</code> | <code>ilegible</code></td>
+            </tr>
+            <tr>
+              <td><code>illegibleFields</code></td>
+              <td>array</td>
+              <td>Campos que no pudieron leerse (marcados con ***)</td>
+            </tr>
+            <tr>
+              <td><code>ocrCorrections</code></td>
+              <td>array</td>
+              <td>Correcciones aplicadas (ej: O→0)</td>
             </tr>
           </tbody>
         </table>
